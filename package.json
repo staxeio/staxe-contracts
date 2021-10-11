@@ -1,0 +1,41 @@
+{
+  "name": "@staxe/staxe-contracts",
+  "version": "2.0.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "format": "npx prettier --write .",
+    "contracts:clean": "npx hardhat clean",
+    "contracts:compile": "npx hardhat compile",
+    "contracts:develop": "npx hardhat node --watch --tags develop",
+    "contracts:test": "npx hardhat test",
+    "contracts:coverage": "npx hardhat coverage"
+  },
+  "private": true,
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "2.0.2",
+    "@nomiclabs/hardhat-etherscan": "2.1.4",
+    "@nomiclabs/hardhat-waffle": "2.0.1",
+    "@typechain/ethers-v5": "5.0.0",
+    "@types/mocha": "^9.0.0",
+    "chai": "4.3.4",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "5.4.4",
+    "hardhat": "2.5.0",
+    "hardhat-contract-sizer": "2.0.3",
+    "hardhat-deploy": "0.8.11",
+    "hardhat-deploy-ethers": "0.3.0-beta.10",
+    "hardhat-gas-reporter": "1.0.4",
+    "hardhat-typechain": "0.3.5",
+    "prettier": "2.3.2",
+    "prettier-plugin-solidity": "^1.0.0-beta.3",
+    "solidity-coverage": "^0.7.16",
+    "ts-node": "~9.1.1",
+    "typechain": "4.0.3",
+    "typescript": "4.3.5"
+  }
+}
