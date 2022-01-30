@@ -17,7 +17,7 @@ if (!fs.existsSync(secrets)) {
   secrets = './secrets.template.json';
 }
 const currentDir = __dirname;
-const { etherscanApiKey, infuraProjectId, networkConfig } = require(secrets);
+const { etherscanApiKey, infuraProjectId, maticAppId, networkConfig } = require(secrets);
 
 // Tasks
 task('accounts', 'Prints the list of accounts', async (args, hre) => {
@@ -32,7 +32,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.9',
+        version: '0.8.11',
         settings: {
           optimizer: {
             enabled: true,
@@ -64,6 +64,14 @@ const config: HardhatUserConfig = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${infuraProjectId}`,
       accounts: [`0x${networkConfig?.mainnet?.privateKey}`],
+    },
+    mumbai: {
+      url: `https://rpc-mumbai.maticvigil.com/v1//${maticAppId}`,
+      accounts: [`0x${networkConfig?.mumbai?.privateKey}`],
+    },
+    matic: {
+      url: `https://rpc-mainnet.maticvigil.com/v1//${maticAppId}`,
+      accounts: [`0x${networkConfig?.matic?.privateKey}`],
     },
   },
   etherscan: {
