@@ -2,48 +2,24 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IStaxeProductionToken.sol";
-import "./IProductionEscrow.sol";
-import "./IStaxeMembers.sol";
-import "./StaxeEscrowFactory.sol";
+import "./interfaces/IStaxeProductionToken.sol";
+import "./interfaces/IProductionEscrow.sol";
+import "./interfaces/IStaxeMembers.sol";
+import "./interfaces/IEscrowFactory.sol";
+import "./interfaces/IStaxeProductions.sol";
 
-contract StaxeProductions is Ownable {
-  // ------- Data structures
-
-  enum ProductionState {
-    EMPTY,
-    CREATED,
-    OPEN,
-    FINISHED,
-    DECLINED
-  }
-
-  struct ProductionData {
-    uint256 id;
-    address creator;
-    uint256 tokenSupply;
-    uint256 tokensSoldCounter;
-    uint256 tokenPrice;
-    ProductionState state;
-    IProductionEscrow deposits;
-  }
-
-  // ------- Productions
-
-  event ProductionCreated(uint256 indexed id, address indexed creator, uint256 tokenSupply);
-  event ProductionFinished(uint256 indexed id);
-  event ProductionTokenBought(uint256 indexed id, address indexed buyer, uint256 tokens);
-
+contract StaxeProductions is Ownable, IStaxeProductions {
   // ------- Contract state
 
   IStaxeProductionToken public token;
   mapping(uint256 => ProductionData) public productionData;
-  StaxeEscrowFactory private escrowFactory;
+
+  IEscrowFactory private escrowFactory;
   IStaxeMembers private members;
 
   constructor(
     IStaxeProductionToken _token,
-    StaxeEscrowFactory _escrowFactory,
+    IEscrowFactory _escrowFactory,
     IStaxeMembers _members
   ) Ownable() {
     token = _token;
@@ -51,16 +27,12 @@ contract StaxeProductions is Ownable {
     members = _members;
   }
 
-  function getProductionData(uint256 id) external view returns (ProductionData memory) {
-    return productionData[id];
+  function setEscrowFactory(IEscrowFactory _escrowFactory) external onlyOwner {
+    escrowFactory = _escrowFactory;
   }
 
-  function getProductionDataForProductions(uint256[] memory ids) external view returns (ProductionData[] memory) {
-    ProductionData[] memory result = new ProductionData[](ids.length);
-    for (uint256 i = 0; i < ids.length; i++) {
-      result[i] = productionData[ids[i]];
-    }
-    return result;
+  function setMembers(IStaxeMembers _members) external onlyOwner {
+    members = _members;
   }
 
   // ------- Lifecycle
@@ -82,7 +54,7 @@ contract StaxeProductions is Ownable {
     data.tokenSupply = tokenSupply;
     data.tokenPrice = tokenPrice;
     data.state = ProductionState.CREATED;
-    data.deposits = escrowFactory.newEscrow(token, id, msg.sender);
+    data.deposits = escrowFactory.newEscrow(token, data);
     token.mintToken(data.deposits, id, tokenSupply);
   }
 

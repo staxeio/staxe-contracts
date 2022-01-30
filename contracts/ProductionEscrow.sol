@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import "./IProductionEscrow.sol";
+import "./interfaces/IProductionEscrow.sol";
 
 contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   using Address for address payable;
@@ -37,11 +37,12 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
 
   function tokenTransfer(
     uint256 tokenId,
-    address currentOnwer,
+    address currentOwner,
     address newOwner,
     uint256 numTokens
   ) external {
-    // TODO: define logic for transfers, track balances
+    require(tokenId == productionId, "INVALID_TOKEN_ID");
+    require(proceedsBalance == 0, "CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST");
   }
 
   function investorBuyToken(address payer, uint256 numTokens) external payable onlyOwner {
