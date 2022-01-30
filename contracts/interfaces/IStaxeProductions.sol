@@ -23,6 +23,8 @@ interface IStaxeProductions {
     uint256 tokenPrice;
     ProductionState state;
     IProductionEscrow deposits;
+    // TODO: Price calculation function? With continuous proceeds, token should become more expensive
+    // Alternatively: Delegate price calculations to escrow?
   }
 
   // ------- Events
@@ -30,4 +32,8 @@ interface IStaxeProductions {
   event ProductionCreated(uint256 indexed id, address indexed creator, uint256 tokenSupply);
   event ProductionFinished(uint256 indexed id);
   event ProductionTokenBought(uint256 indexed id, address indexed buyer, uint256 tokens);
+
+  // ------- Functions
+
+  function getProductionData(uint256 id) external view returns (ProductionData memory);
 }

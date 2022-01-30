@@ -6,75 +6,80 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "./interfaces/IProductionEscrow.sol";
+import "./interfaces/IStaxeProductions.sol";
 
 contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   using Address for address payable;
 
-  event FundsDeposit(address indexed payer, uint256 amount);
-  event ProceedsDeposit(address indexed payer, uint256 amount);
-  event FundsPayout(address indexed receiver, uint256 amount);
-  event ProceedsPayout(address indexed receiver, uint256 amount);
-
   IERC1155 private productionToken;
-  address public creator;
+  IStaxeProductions private productions;
   uint256 public productionId;
 
   uint256 public fundsBalance;
-  uint256 public proceedsBalance;
-  uint256 public proceedsTotal;
-  mapping(address => uint256) public proceedsPayed;
+  uint256 private proceedsTotal;
+  mapping(address => uint256) private proceedsPayed;
 
   constructor(
     IERC1155 _productionToken,
-    uint256 _productionId,
-    address _creator
+    IStaxeProductions _productions,
+    uint256 _productionId
   ) Ownable() {
-    require(_creator != address(0), "INVALID_CREATOR");
     productionToken = _productionToken;
+    productions = _productions;
     productionId = _productionId;
-    creator = _creator;
   }
 
-  function tokenTransfer(
-    uint256 tokenId,
-    address currentOwner,
-    address newOwner,
-    uint256 numTokens
-  ) external {
-    require(tokenId == productionId, "INVALID_TOKEN_ID");
-    require(proceedsBalance == 0, "CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST");
-  }
+  // --- Callable by owner only
 
-  function investorBuyToken(address payer, uint256 numTokens) external payable onlyOwner {
+  function investorBuyToken(address payer, uint256 numTokens) external payable override onlyOwner {
     uint256 amount = msg.value;
     emit FundsDeposit(payer, amount);
     fundsBalance += amount;
     productionToken.safeTransferFrom(address(this), payer, productionId, numTokens, "0x0");
   }
 
-  function withdrawFunds(address receiver, uint256 amount) external onlyOwner {
-    require(receiver == creator, "NOT_CREATOR");
+  function withdrawFunds(address receiver, uint256 amount) external override onlyOwner {
+    require(receiver == productions.getProductionData(productionId).creator, "NOT_CREATOR");
     require(fundsBalance >= amount, "NOT_ENOUGH_FUNDS");
     emit FundsPayout(receiver, amount);
     fundsBalance -= amount;
     payable(receiver).sendValue(amount);
   }
 
-  function proceeds(address payer) external payable onlyOwner {
-    require(payer == creator, "NOT_CREATOR");
+  function proceeds(address payer) external payable override onlyOwner {
+    require(payer == productions.getProductionData(productionId).creator, "NOT_CREATOR");
     uint256 amount = msg.value;
     emit ProceedsDeposit(payer, amount);
-    proceedsBalance += amount;
     proceedsTotal += amount;
   }
 
-  function withdrawProceeds(address receiver, uint256 amount) external onlyOwner {
-    // must own at least a token
-    // calculate share from total proceeds
-    // check if eligible for amount
-    // track amount of proceeds taken
+  function withdrawProceeds(address receiver, uint256 amount) external override onlyOwner {
+    require(_maxPayoutFor(receiver) >= amount, "NOT_ENOUGH_PROCEEDS_AVAILABLE");
     emit ProceedsPayout(receiver, amount);
+    proceedsPayed[receiver] += amount;
     payable(receiver).sendValue(amount);
+  }
+
+  // --- Callable directly
+
+  function getWithdrawableFunds() external view override returns (uint256) {
+    return fundsBalance;
+  }
+
+  function getWithdrawableProceeds(address investor) external view override returns (uint256) {
+    return _maxPayoutFor(investor);
+  }
+
+  function tokenTransfer(
+    IERC1155 tokenContract,
+    uint256 tokenId,
+    address currentOwner,
+    address newOwner,
+    uint256 numTokens
+  ) external override {
+    require(productionToken == tokenContract, "INVALID_CONTRACT");
+    require(tokenId == productionId, "INVALID_TOKEN_ID");
+    require(proceedsTotal == 0, "CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST");
   }
 
   function onERC1155Received(
@@ -103,5 +108,20 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
     return
       interfaceID == 0x01ffc9a7 || // ERC-165 support (i.e. `bytes4(keccak256('supportsInterface(bytes4)'))`).
       interfaceID == 0x4e2312e0; // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
+  }
+
+  // ----- Internals
+
+  function _maxPayoutFor(address receiver) internal view returns (uint256) {
+    IStaxeProductions.ProductionData memory data = productions.getProductionData(productionId);
+    // Production finished?
+    // -> No more tokens sold. Unsold tokens do not count for payout calculations.
+    // -> Otherwise calculate based on assumption that more tokens are sold.
+    uint256 divideByTokens = (
+      data.state == IStaxeProductions.ProductionState.FINISHED ? data.tokensSoldCounter : data.tokenSupply
+    );
+    uint256 amountPerToken = (proceedsTotal - (proceedsTotal % divideByTokens)) / divideByTokens;
+    uint256 tokensOwned = productionToken.balanceOf(receiver, productionId);
+    return (amountPerToken * tokensOwned) - proceedsPayed[receiver];
   }
 }

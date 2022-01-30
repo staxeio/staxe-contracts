@@ -8,11 +8,12 @@ import "./interfaces/IStaxeProductions.sol";
 import "./ProductionEscrow.sol";
 
 contract StaxeEscrowFactory is IEscrowFactory {
-  function newEscrow(IERC1155 token, IStaxeProductions.ProductionData memory productionData)
-    external
-    returns (IProductionEscrow)
-  {
-    ProductionEscrow escrow = new ProductionEscrow(token, productionData.id, productionData.creator);
+  function newEscrow(
+    IERC1155 token,
+    IStaxeProductions productions,
+    uint256 productionId
+  ) external override returns (IProductionEscrow) {
+    ProductionEscrow escrow = new ProductionEscrow(token, productions, productionId);
     escrow.transferOwnership(msg.sender);
     return escrow;
   }

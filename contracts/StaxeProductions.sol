@@ -35,6 +35,10 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     members = _members;
   }
 
+  function getProductionData(uint256 id) external view override returns (ProductionData memory) {
+    return productionData[id];
+  }
+
   // ------- Lifecycle
 
   function createNewProduction(
@@ -54,7 +58,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     data.tokenSupply = tokenSupply;
     data.tokenPrice = tokenPrice;
     data.state = ProductionState.CREATED;
-    data.deposits = escrowFactory.newEscrow(token, data);
+    data.deposits = escrowFactory.newEscrow(token, this, id);
     token.mintToken(data.deposits, id, tokenSupply);
   }
 
@@ -117,7 +121,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     data.deposits.proceeds{value: msg.value}(msg.sender);
   }
 
-  function finish(uint256 id) external {
+  function finish(uint256 id) external payable {
     // checks
     require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
     ProductionData storage data = productionData[id];
@@ -125,6 +129,9 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     require(data.state == ProductionState.OPEN, "NOT_OPEN");
     require(msg.sender == data.creator, "NOT_CREATOR");
     // update state
+    if (msg.value > 0) {
+      data.deposits.proceeds{value: msg.value}(msg.sender);
+    }
     data.state = ProductionState.FINISHED;
   }
 }

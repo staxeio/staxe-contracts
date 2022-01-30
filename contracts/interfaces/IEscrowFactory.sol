@@ -6,7 +6,9 @@ import "./IProductionEscrow.sol";
 import "./IStaxeProductions.sol";
 
 interface IEscrowFactory {
-  function newEscrow(IERC1155 token, IStaxeProductions.ProductionData memory productionData)
-    external
-    returns (IProductionEscrow);
+  function newEscrow(
+    IERC1155 token,
+    IStaxeProductions productions,
+    uint256 productionId
+  ) external returns (IProductionEscrow);
 }
