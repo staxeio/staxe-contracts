@@ -24,4 +24,6 @@ interface IProductionEscrow is IProductionTokenTracker {
   function getWithdrawableFunds() external view returns (uint256);
 
   function getWithdrawableProceeds(address investor) external view returns (uint256);
+
+  function getNextTokenPrice(address investor, uint256 tokensToBuy) external view returns (uint256);
 }

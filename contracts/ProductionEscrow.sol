@@ -17,7 +17,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
 
   uint256 public fundsBalance;
   uint256 private proceedsTotal;
-  mapping(address => uint256) private proceedsPayed;
+  mapping(address => uint256) private proceedsPaid;
 
   constructor(
     IERC1155 _productionToken,
@@ -39,7 +39,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   }
 
   function withdrawFunds(address receiver, uint256 amount) external override onlyOwner {
-    require(receiver == productions.getProductionData(productionId).creator, "NOT_CREATOR");
+    require(receiver == _productionData().creator, "NOT_CREATOR");
     require(fundsBalance >= amount, "NOT_ENOUGH_FUNDS");
     emit FundsPayout(receiver, amount);
     fundsBalance -= amount;
@@ -47,7 +47,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   }
 
   function proceeds(address payer) external payable override onlyOwner {
-    require(payer == productions.getProductionData(productionId).creator, "NOT_CREATOR");
+    require(payer == _productionData().creator, "NOT_CREATOR");
     uint256 amount = msg.value;
     emit ProceedsDeposit(payer, amount);
     proceedsTotal += amount;
@@ -56,7 +56,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   function withdrawProceeds(address receiver, uint256 amount) external override onlyOwner {
     require(_maxPayoutFor(receiver) >= amount, "NOT_ENOUGH_PROCEEDS_AVAILABLE");
     emit ProceedsPayout(receiver, amount);
-    proceedsPayed[receiver] += amount;
+    proceedsPaid[receiver] += amount;
     payable(receiver).sendValue(amount);
   }
 
@@ -70,6 +70,12 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
     return _maxPayoutFor(investor);
   }
 
+  function getNextTokenPrice(address investor, uint256 tokensToBuy) external view override returns (uint256) {
+    uint256 tokenValue = _amountPerToken();
+    uint256 tokenPrice = _productionData().tokenPrice;
+    return tokenValue > tokenPrice ? tokenValue * tokensToBuy : tokenPrice * tokensToBuy;
+  }
+
   function tokenTransfer(
     IERC1155 tokenContract,
     uint256 tokenId,
@@ -80,6 +86,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
     require(productionToken == tokenContract, "INVALID_CONTRACT");
     require(tokenId == productionId, "INVALID_TOKEN_ID");
     require(proceedsTotal == 0, "CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST");
+    require(_productionData().state == IStaxeProductions.ProductionState.OPEN, "PRODUCTION_NOT_OPEN");
   }
 
   function onERC1155Received(
@@ -113,15 +120,23 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   // ----- Internals
 
   function _maxPayoutFor(address receiver) internal view returns (uint256) {
-    IStaxeProductions.ProductionData memory data = productions.getProductionData(productionId);
+    uint256 amountPerToken = _amountPerToken();
+    uint256 tokensOwned = productionToken.balanceOf(receiver, productionId);
+    return (amountPerToken * tokensOwned) - proceedsPaid[receiver];
+  }
+
+  function _amountPerToken() internal view returns (uint256) {
+    IStaxeProductions.ProductionData memory data = _productionData();
     // Production finished?
     // -> No more tokens sold. Unsold tokens do not count for payout calculations.
     // -> Otherwise calculate based on assumption that more tokens are sold.
     uint256 divideByTokens = (
       data.state == IStaxeProductions.ProductionState.FINISHED ? data.tokensSoldCounter : data.tokenSupply
     );
-    uint256 amountPerToken = (proceedsTotal - (proceedsTotal % divideByTokens)) / divideByTokens;
-    uint256 tokensOwned = productionToken.balanceOf(receiver, productionId);
-    return (amountPerToken * tokensOwned) - proceedsPayed[receiver];
+    return (proceedsTotal - (proceedsTotal % divideByTokens)) / divideByTokens;
+  }
+
+  function _productionData() internal view returns (IStaxeProductions.ProductionData memory) {
+    return productions.getProductionData(productionId);
   }
 }

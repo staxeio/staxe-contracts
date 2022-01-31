@@ -86,14 +86,16 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     require(data.id > 0, "NOT_EXIST");
     require(data.state == ProductionState.OPEN, "NOT_OPEN");
     require(data.tokensSoldCounter + numTokens <= data.tokenSupply, "NOT_ENOUGH_TOKENS");
-    require(data.tokenPrice * numTokens <= msg.value, "NOT_ENOUGH_MONEY_SENT");
+    uint256 price = data.deposits.getNextTokenPrice(msg.sender, numTokens);
+    require(price <= msg.value, "NOT_ENOUGH_FUNDS_SENT");
     // update state
     emit ProductionTokenBought(id, msg.sender, numTokens);
     data.tokensSoldCounter = numTokens + productionData[id].tokensSoldCounter;
-    uint256 price = data.tokenPrice * numTokens;
-    uint256 exceed = msg.value - price;
     data.deposits.investorBuyToken{value: price}(msg.sender, numTokens);
-    payable(msg.sender).transfer(exceed);
+    uint256 exceed = msg.value - price;
+    if (exceed > 0) {
+      payable(msg.sender).transfer(exceed);
+    }
   }
 
   function withdrawFunds(uint256 id, uint256 amount) external {
