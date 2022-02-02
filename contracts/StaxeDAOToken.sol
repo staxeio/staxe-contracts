@@ -15,7 +15,7 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
   address public treasury;
 
   event MerkleRootChanged(bytes32 merkleRoot);
-  event TokenClaimed(address indexed claimant, uint256 amount);
+  event TokenClaimed(address indexed claimer, uint256 amount);
 
   constructor(
     address _treasury,
@@ -51,12 +51,12 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
     emit MerkleRootChanged(_merkleRoot);
   }
 
-  function toTreasury() external onlyOwner {
-    require(claimPeriodEnds == 0 || block.timestamp > claimPeriodEnds, "STX_CLAIM_PERIOD_ENDED");
+  function sweepTokens() external onlyOwner {
+    require(claimPeriodEnds == 0 || block.timestamp > claimPeriodEnds, "STX_CLAIM_PERIOD_NOT_ENDED");
     _transfer(address(this), treasury, balanceOf(address(this)));
   }
 
-  function mint(uint256 additionalSupply) public onlyOwner {
-    _mint(msg.sender, additionalSupply * (10**18));
+  function mint(uint256 additionalSupply) external onlyOwner {
+    _mint(address(this), additionalSupply * (10**18));
   }
 }
