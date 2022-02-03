@@ -8,20 +8,21 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
-  mapping(address => uint256) public claimed;
+  mapping(address => uint256[]) public claimed;
   bytes32 public merkleRoot;
   uint256 public claimPeriodEnds;
   address public treasury;
+  uint256 public airdropCounter;
 
-  event MerkleRootChanged(bytes32 merkleRoot);
-  event TokenClaimed(address indexed claimer, uint256 amount);
+  event MerkleRootChanged(bytes32 merkleRoot, uint256 airdropCounter);
+  event TokenClaimed(address indexed claimer, uint256 amount, uint256 airdropCounter);
 
   constructor(
     address _treasury,
     uint256 treasurySupply,
     uint256 airdropSupply,
     uint256 _claimPeriodEnds
-  ) ERC20("Staxe DAO", "STX") ERC20Permit("Staxe DAO") {
+  ) ERC20("Staxe DAO", "STX") ERC20Permit("Staxe DAO") Ownable() {
     _mint(_treasury, treasurySupply * (10**18));
     _mint(address(this), airdropSupply * (10**18));
     treasury = _treasury;
@@ -29,33 +30,34 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
   }
 
   function claimTokens(uint256 amount, bytes32[] calldata merkleProof) external {
+    require(merkleRoot != bytes32(0), "STX_MERKLE_ROOT_NOT_SET");
     bytes32 leaf = keccak256(abi.encodePacked(msg.sender, amount));
     bool valid = MerkleProof.verify(merkleProof, merkleRoot, leaf);
     require(valid, "STX_MERKLE_PROOF_INVALID");
-    require(claimed[msg.sender] < amount, "STX_ALREADY_CLAIMED");
-    claimed[msg.sender] += amount;
-    emit TokenClaimed(msg.sender, amount);
+    require(claimed[msg.sender][airdropCounter] < amount, "STX_ALREADY_CLAIMED");
+    claimed[msg.sender][airdropCounter] = amount;
+    emit TokenClaimed(msg.sender, amount, airdropCounter);
     _transfer(address(this), msg.sender, amount);
   }
 
-  function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
-    require(merkleRoot == bytes32(0), "STX_MERKLE_ROOT_ALREADY_SET");
-    merkleRoot = _merkleRoot;
-    emit MerkleRootChanged(_merkleRoot);
-  }
-
   function newAirdrop(bytes32 _merkleRoot, uint256 _claimPeriodEnds) external onlyOwner {
+    require(claimPeriodEnds == 0 || block.timestamp > claimPeriodEnds, "STX_CLAIM_PERIOD_NOT_ENDED");
     merkleRoot = _merkleRoot;
     claimPeriodEnds = _claimPeriodEnds;
-    emit MerkleRootChanged(_merkleRoot);
+    airdropCounter += 1;
+    emit MerkleRootChanged(_merkleRoot, airdropCounter);
   }
 
-  function sweepTokens() external onlyOwner {
-    require(claimPeriodEnds == 0 || block.timestamp > claimPeriodEnds, "STX_CLAIM_PERIOD_NOT_ENDED");
+  function sweepUnclaimedTokens() external onlyOwner {
+    require(block.timestamp > claimPeriodEnds, "STX_CLAIM_PERIOD_NOT_ENDED");
     _transfer(address(this), treasury, balanceOf(address(this)));
   }
 
   function mint(uint256 additionalSupply) external onlyOwner {
     _mint(address(this), additionalSupply * (10**18));
+  }
+
+  function mint(address mintFor, uint256 additionalSupply) external onlyOwner {
+    _mint(mintFor, additionalSupply * (10**18));
   }
 }
