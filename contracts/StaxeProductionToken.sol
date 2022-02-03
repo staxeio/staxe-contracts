@@ -23,12 +23,12 @@ contract StaxeEventToken is ERC1155PresetMinterPauser, IStaxeProductionToken {
   }
 
   function _beforeTokenTransfer(
-    address operator,
+    address, /*operator*/
     address from,
     address to,
     uint256[] memory ids,
     uint256[] memory amounts,
-    bytes memory data
+    bytes memory /*data*/
   ) internal override {
     for (uint256 i = 0; i < ids.length; i++) {
       IProductionTokenTracker tracker = tokenMinter[ids[i]];

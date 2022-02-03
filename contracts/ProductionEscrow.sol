@@ -70,7 +70,10 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
     return _maxPayoutFor(investor);
   }
 
-  function getNextTokenPrice(address investor, uint256 tokensToBuy) external view override returns (uint256) {
+  function getNextTokenPrice(
+    address, /*investor*/
+    uint256 tokensToBuy
+  ) external view override returns (uint256) {
     uint256 tokenValue = _amountPerToken();
     uint256 tokenPrice = _productionData().tokenPrice;
     return tokenValue > tokenPrice ? tokenValue * tokensToBuy : tokenPrice * tokensToBuy;
@@ -79,10 +82,10 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   function tokenTransfer(
     IERC1155 tokenContract,
     uint256 tokenId,
-    address currentOwner,
-    address newOwner,
-    uint256 numTokens
-  ) external override {
+    address, /*currentOwner*/
+    address, /*newOwner*/
+    uint256 /*numTokens*/
+  ) external view override {
     require(productionToken == tokenContract, "INVALID_CONTRACT");
     require(tokenId == productionId, "INVALID_TOKEN_ID");
     require(proceedsTotal == 0, "CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST");
@@ -90,22 +93,22 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   }
 
   function onERC1155Received(
-    address operator,
-    address from,
+    address, /*operator*/
+    address, /*from*/
     uint256 tokenId,
-    uint256 value,
-    bytes calldata _data
+    uint256, /*value*/
+    bytes calldata /*data*/
   ) external virtual override returns (bytes4) {
     require(tokenId == productionId, "WRONG_EVENT_ID");
     return this.onERC1155Received.selector;
   }
 
   function onERC1155BatchReceived(
-    address _operator,
-    address _from,
-    uint256[] calldata _tokenIds,
-    uint256[] calldata _values,
-    bytes calldata _data
+    address, /*operator*/
+    address, /*from*/
+    uint256[] calldata, /*tokenIds*/
+    uint256[] calldata, /*values*/
+    bytes calldata /*data*/
   ) external virtual override returns (bytes4) {
     return 0x00; // unsupported
   }
