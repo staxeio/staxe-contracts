@@ -4,15 +4,17 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
+  using Counters for Counters.Counter;
   mapping(address => uint256[]) public claimed;
   bytes32 public merkleRoot;
   uint256 public claimPeriodEnds;
   address public treasury;
-  uint256 public airdropCounter;
+  Counters.Counter public airdropCounter;
 
   event MerkleRootChanged(bytes32 merkleRoot, uint256 airdropCounter);
   event TokenClaimed(address indexed claimer, uint256 amount, uint256 airdropCounter);
@@ -34,9 +36,9 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
     bytes32 leaf = keccak256(abi.encodePacked(msg.sender, amount));
     bool valid = MerkleProof.verify(merkleProof, merkleRoot, leaf);
     require(valid, "STX_MERKLE_PROOF_INVALID");
-    require(claimed[msg.sender][airdropCounter] < amount, "STX_ALREADY_CLAIMED");
-    claimed[msg.sender][airdropCounter] = amount;
-    emit TokenClaimed(msg.sender, amount, airdropCounter);
+    require(claimed[msg.sender][airdropCounter.current()] < amount, "STX_ALREADY_CLAIMED");
+    claimed[msg.sender][airdropCounter.current()] = amount;
+    emit TokenClaimed(msg.sender, amount, airdropCounter.current());
     _transfer(address(this), msg.sender, amount);
   }
 
@@ -44,8 +46,8 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
     require(claimPeriodEnds == 0 || block.timestamp > claimPeriodEnds, "STX_CLAIM_PERIOD_NOT_ENDED");
     merkleRoot = _merkleRoot;
     claimPeriodEnds = _claimPeriodEnds;
-    airdropCounter += 1;
-    emit MerkleRootChanged(_merkleRoot, airdropCounter);
+    airdropCounter.increment();
+    emit MerkleRootChanged(_merkleRoot, airdropCounter.current());
   }
 
   function sweepUnclaimedTokens() external onlyOwner {
