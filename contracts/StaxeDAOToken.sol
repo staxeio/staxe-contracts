@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
   using Counters for Counters.Counter;
-  mapping(address => uint256[]) public claimed;
+  mapping(address => mapping(uint256 => uint256)) public claimed;
   bytes32 public merkleRoot;
   uint256 public claimPeriodEnds;
   address public treasury;
@@ -36,7 +36,7 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
     bytes32 leaf = keccak256(abi.encodePacked(msg.sender, amount));
     bool valid = MerkleProof.verify(merkleProof, merkleRoot, leaf);
     require(valid, "STX_MERKLE_PROOF_INVALID");
-    require(claimed[msg.sender][airdropCounter.current()] < amount, "STX_ALREADY_CLAIMED");
+    require(claimed[msg.sender][airdropCounter.current()] == 0, "STX_ALREADY_CLAIMED");
     claimed[msg.sender][airdropCounter.current()] = amount;
     emit TokenClaimed(msg.sender, amount, airdropCounter.current());
     _transfer(address(this), msg.sender, amount);
