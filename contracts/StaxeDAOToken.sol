@@ -16,19 +16,17 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
   address public treasury;
   Counters.Counter public airdropCounter;
 
-  event MerkleRootChanged(bytes32 merkleRoot, uint256 airdropCounter);
+  event AirdropCreated(bytes32 merkleRoot, uint256 airdropCounter, uint256 claimPeriodEnds);
   event TokenClaimed(address indexed claimer, uint256 amount, uint256 airdropCounter);
 
   constructor(
     address _treasury,
     uint256 treasurySupply,
-    uint256 airdropSupply,
-    uint256 _claimPeriodEnds
+    uint256 airdropSupply
   ) ERC20("Staxe DAO", "STX") ERC20Permit("Staxe DAO") Ownable() {
     _mint(_treasury, treasurySupply * (10**18));
     _mint(address(this), airdropSupply * (10**18));
     treasury = _treasury;
-    claimPeriodEnds = _claimPeriodEnds;
   }
 
   function claimTokens(uint256 amount, bytes32[] calldata merkleProof) external {
@@ -47,7 +45,7 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
     merkleRoot = _merkleRoot;
     claimPeriodEnds = _claimPeriodEnds;
     airdropCounter.increment();
-    emit MerkleRootChanged(_merkleRoot, airdropCounter.current());
+    emit AirdropCreated(merkleRoot, airdropCounter.current(), claimPeriodEnds);
   }
 
   function sweepUnclaimedTokens() external onlyOwner {
@@ -55,11 +53,11 @@ contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
     _transfer(address(this), treasury, balanceOf(address(this)));
   }
 
-  function mint(uint256 additionalSupply) external onlyOwner {
+  function mintForAirdrop(uint256 additionalSupply) external onlyOwner {
     _mint(address(this), additionalSupply * (10**18));
   }
 
-  function mint(address mintFor, uint256 additionalSupply) external onlyOwner {
-    _mint(mintFor, additionalSupply * (10**18));
+  function mintForTreasury(uint256 additionalSupply) external onlyOwner {
+    _mint(treasury, additionalSupply * (10**18));
   }
 }

@@ -7,10 +7,10 @@ import "./interfaces/IStaxeProductionToken.sol";
 import "./interfaces/IProductionTokenTracker.sol";
 
 contract StaxeEventToken is ERC1155PresetMinterPauser, IStaxeProductionToken {
+  mapping(uint256 => IProductionTokenTracker) tokenMinter; // notify token minter on token transfers if sender != tokenMinter
+
   // Not a decentralized URL, but we're not selling an NFT
   constructor() ERC1155PresetMinterPauser("https://staxe.app/api/tokens/{id}") {}
-
-  mapping(uint256 => IProductionTokenTracker) tokenMinter; // notify token minter on token transfers if sender != tokenMinter
 
   function mintToken(
     IProductionTokenTracker owner,
