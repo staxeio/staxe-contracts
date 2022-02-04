@@ -29,6 +29,8 @@ describe('StaxeDAOToken', function () {
     token = (await tokenFactory.deploy(treasury.getAddress(), TREASURY_INIT, AIRDROP_INIT)) as StaxeDAOToken;
   });
 
+  // ------------------------------------ init token ------------------------------------
+
   it('inits with treasury and airdrop balance', async function () {
     // when
     const treasuryBalance = await token.balanceOf(await treasury.getAddress());
@@ -38,6 +40,8 @@ describe('StaxeDAOToken', function () {
     expect(treasuryBalance).to.equal(ethersParse(TREASURY_INIT, TOKEN_DECIMALS));
     expect(airdropSupply).to.equal(ethersParse(AIRDROP_INIT, TOKEN_DECIMALS));
   });
+
+  // ------------------------------------ airdrops / claim ------------------------------------
 
   it('creates new airdrop', async () => {
     // given
@@ -53,6 +57,13 @@ describe('StaxeDAOToken', function () {
     await expect(token.newAirdrop(merkleRoot, claimEnd))
       .to.emit(token, 'AirdropCreated')
       .withArgs(merkleRoot, 1, claimEnd);
+  });
+
+  it('should fail to create new airdrop if not owner', async () => {
+    // when then
+    await expect(
+      token.connect(addresses[0]).newAirdrop('0xcb3e5354b17a03f06b0bef4e293ceda50dbbfc91adbeacd54ee46bbc81da2c12', 1000)
+    ).to.be.revertedWith('Ownable: caller is not the owner');
   });
 
   it('allows to claim correct amount of tokens with airdrop', async () => {
@@ -165,6 +176,8 @@ describe('StaxeDAOToken', function () {
     expect(await token.balanceOf(addresses[0].address)).to.equal(amount1.add(amount2));
   });
 
+  // ------------------------------------ sweep token ------------------------------------
+
   it('should sweep unclaimed airdrop supplies', async () => {
     // given
     const airdrop = {
@@ -197,5 +210,12 @@ describe('StaxeDAOToken', function () {
 
     // when then
     await expect(token.sweepUnclaimedTokens()).to.be.revertedWith('STX_CLAIM_PERIOD_NOT_ENDED');
+  });
+
+  it('should fail to sweep tokens if not owner', async () => {
+    // when then
+    await expect(token.connect(addresses[0]).sweepUnclaimedTokens()).to.be.revertedWith(
+      'Ownable: caller is not the owner'
+    );
   });
 });

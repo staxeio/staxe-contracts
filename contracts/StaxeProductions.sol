@@ -39,6 +39,14 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     return productionData[id];
   }
 
+  function getProductionDataForProductions(uint256[] memory ids) external view returns (ProductionData[] memory) {
+    ProductionData[] memory result = new ProductionData[](ids.length);
+    for (uint256 i = 0; i < ids.length; i++) {
+      result[i] = productionData[ids[i]];
+    }
+    return result;
+  }
+
   // ------- Lifecycle
 
   function createNewProduction(
@@ -47,10 +55,10 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     uint256 tokenPrice
   ) external {
     require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
-    require(id > 0, "EVENT_ID_0");
+    require(id > 0, "ID_0_NOT_ALLOWED");
     require(tokenSupply > 0, "ZERO_TOKEN_SUPPLY");
     require(tokenPrice > 0, "ZERO_TOKEN_PRICE");
-    require(productionData[id].id == 0, "EVENT_EXISTS");
+    require(productionData[id].id == 0, "PRODUCTION_EXISTS");
     emit ProductionCreated(id, msg.sender, tokenSupply);
     ProductionData storage data = productionData[id];
     data.id = id;
@@ -78,9 +86,13 @@ contract StaxeProductions is Ownable, IStaxeProductions {
 
   // ------- Investment
 
+  function getNextTokensPrice(uint256 id, uint256 numTokens) external view returns (uint256) {
+    require(productionData[id].id > 0, "NOT_EXIST");
+    return productionData[id].deposits.getNextTokenPrice(msg.sender, numTokens);
+  }
+
   function buyTokens(uint256 id, uint256 numTokens) external payable {
     // checks
-    require(msg.value > 0, "ZERO_VALUE");
     require(numTokens > 0, "ZERO_TOKEN");
     ProductionData storage data = productionData[id];
     require(data.id > 0, "NOT_EXIST");

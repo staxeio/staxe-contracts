@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/IStaxeProductionToken.sol";
 import "./interfaces/IProductionTokenTracker.sol";
 
-contract StaxeEventToken is ERC1155PresetMinterPauser, IStaxeProductionToken {
+contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToken {
   mapping(uint256 => IProductionTokenTracker) tokenMinter; // notify token minter on token transfers if sender != tokenMinter
 
   // Not a decentralized URL, but we're not selling an NFT
@@ -32,9 +32,17 @@ contract StaxeEventToken is ERC1155PresetMinterPauser, IStaxeProductionToken {
   ) internal override {
     for (uint256 i = 0; i < ids.length; i++) {
       IProductionTokenTracker tracker = tokenMinter[ids[i]];
-      if (address(tracker) != address(0) && address(tracker) != from) {
+      if (_shouldCallTokenTransferTracker(from, to, address(tracker))) {
         tracker.tokenTransfer(this, ids[i], from, to, amounts[i]);
       }
     }
+  }
+
+  function _shouldCallTokenTransferTracker(
+    address from,
+    address to,
+    address tracker
+  ) internal view returns (bool) {
+    return tracker != address(0) && from != address(this) && from != tracker && to != tracker;
   }
 }
