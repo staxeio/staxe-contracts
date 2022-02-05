@@ -322,7 +322,7 @@ describe('StaxeProductions', function () {
       expect(await escrow.getWithdrawableProceeds(investor1.address)).to.be.equal(proceeds / shareToBuy);
     });
 
-    it('should calculate proceeds for multiple proceed sendings', async () => {
+    it('should calculate proceeds for multiple proceed sendings and finalize with not all tokens sold', async () => {
       // given
       const shareToBuy = 2;
       const tokensToBuy = eventData.tokenSupply / shareToBuy;
@@ -362,6 +362,17 @@ describe('StaxeProductions', function () {
 
       const newPricePerToken = await productions.getNextTokensPrice(eventData.id, 1);
       expect(newPricePerToken).to.eq(BigNumber.from(eventData.tokenPrice).mul(2));
+
+      // Finish event, only 50% of tokens sold. Now proceeds calculation can be done based on tokens sold:
+      await productions.connect(organizer).finish(eventData.id, { value: 0 });
+      expect(await escrow.getWithdrawableProceeds(investor1.address)).to.be.equal(
+        // new token price was new proceeds per token. Now we finish and have only 50% sold, so this doubles.
+        // Multiply with tokens we own and subtract the proceeds we have already taken.
+        newPricePerToken
+          .mul(2)
+          .mul(tokensToBuy)
+          .sub(proceeds * 2)
+      );
     });
 
     it('should reject proceeds if not organizer', async () => {
