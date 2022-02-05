@@ -190,7 +190,7 @@ describe('StaxeDAOToken', function () {
     await timeTravel(6);
 
     // when
-    await token.sweepUnclaimedTokens();
+    await token.connect(owner).sweepUnclaimedTokens();
 
     // then
     await timeTravel(-6);
@@ -209,7 +209,7 @@ describe('StaxeDAOToken', function () {
     await token.connect(addresses[0]).claimTokens(amount, merkleProof);
 
     // when then
-    await expect(token.sweepUnclaimedTokens()).to.be.revertedWith('STX_CLAIM_PERIOD_NOT_ENDED');
+    await expect(token.connect(owner).sweepUnclaimedTokens()).to.be.revertedWith('STX_CLAIM_PERIOD_NOT_ENDED');
   });
 
   it('should fail to sweep tokens if not owner', async () => {

@@ -9,6 +9,7 @@ import {
   StaxeProductionToken,
 } from '../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
+import { BigNumber } from 'ethers';
 
 describe('StaxeProductions', function () {
   // contracts
@@ -292,7 +293,7 @@ describe('StaxeProductions', function () {
     const eventData = {
       id: 1000,
       tokenSupply: 100,
-      tokenPrice: 100000000000,
+      tokenPrice: 100_000_000_000,
     };
 
     beforeEach(async () => {
@@ -319,6 +320,48 @@ describe('StaxeProductions', function () {
       const escrow = productionEscrowFactory.attach(deposits) as ProductionEscrow;
 
       expect(await escrow.getWithdrawableProceeds(investor1.address)).to.be.equal(proceeds / shareToBuy);
+    });
+
+    it('should calculate proceeds for multiple proceed sendings', async () => {
+      // given
+      const shareToBuy = 2;
+      const tokensToBuy = eventData.tokenSupply / shareToBuy;
+      const cost = await productions.getNextTokensPrice(eventData.id, tokensToBuy);
+      await productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost });
+      const proceeds = eventData.tokenPrice;
+      const productionEscrowFactory = await ethers.getContractFactory('ProductionEscrow');
+      const deposits = (await productions.getProductionData(eventData.id)).deposits;
+      const escrow = productionEscrowFactory.attach(deposits) as ProductionEscrow;
+
+      // when
+      // proceeds 1
+      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
+      await productions.connect(investor1).withdrawProceeds(eventData.id, proceeds / shareToBuy);
+
+      // proceeds 2
+      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
+      await productions.connect(investor1).withdrawProceeds(eventData.id, proceeds / shareToBuy);
+
+      // proceeds 3 and 4
+      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
+      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
+
+      await productions.connect(investor1).withdrawProceeds(eventData.id, proceeds);
+      expect(await escrow.getWithdrawableProceeds(investor1.address)).to.be.equal(0);
+      await expect(
+        // Can't withdraw more than eligible
+        productions.connect(investor1).withdrawProceeds(eventData.id, proceeds)
+      ).to.be.revertedWith('NOT_ENOUGH_PROCEEDS_AVAILABLE');
+
+      // token price now based on positive proceeds
+      const fantasticProceeds =
+        (eventData.tokenSupply - 4) * eventData.tokenPrice + eventData.tokenSupply * eventData.tokenPrice;
+      await productions.connect(organizer).proceeds(eventData.id, { value: fantasticProceeds });
+      // proceed per token is now 2 times the token price - we sell the token now based on proceeds
+      // you get immediately out
+
+      const newPricePerToken = await productions.getNextTokensPrice(eventData.id, 1);
+      expect(newPricePerToken).to.eq(BigNumber.from(eventData.tokenPrice).mul(2));
     });
 
     it('should reject proceeds if not organizer', async () => {
