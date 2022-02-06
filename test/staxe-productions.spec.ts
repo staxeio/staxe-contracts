@@ -291,6 +291,40 @@ describe('StaxeProductions', function () {
         await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: payment })
       ).to.changeEtherBalance(investor1, -cost);
     });
+
+    it('should allow to transfer token as long as there are no proceeds', async () => {
+      // given
+      const tokensToBuy = 10;
+      const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      const payment = cost.mul(10);
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: payment });
+
+      // when
+      await token
+        .connect(investor1)
+        .safeTransferFrom(investor1.address, investor2.address, data.id, tokensToBuy / 2, []);
+
+      // then
+      expect(await token.balanceOf(investor2.address, data.id)).is.eq(tokensToBuy / 2);
+      expect(await token.balanceOf(investor1.address, data.id)).is.eq(tokensToBuy / 2);
+    });
+
+    it('should not allow to transfer token when proceeds have been sent', async () => {
+      // given
+      const tokensToBuy = 10;
+      const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      const payment = cost.mul(10);
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: payment });
+      await productions.connect(organizer).proceeds(data.id, { value: cost });
+
+      // when
+      await expect(
+        token.connect(investor1).safeTransferFrom(investor1.address, investor2.address, data.id, tokensToBuy / 2, [])
+      ).to.be.revertedWith('CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST');
+
+      // then
+      expect(await token.balanceOf(investor2.address, data.id)).is.eq(0);
+    });
   });
 
   // ---------------------------------- withdrawFunds
