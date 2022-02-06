@@ -24,6 +24,12 @@ describe('StaxeProductions', function () {
   let investor2: SignerWithAddress;
   let addresses: SignerWithAddress[];
 
+  const attachEscrow = async (id: number) => {
+    const productionEscrowFactory = await ethers.getContractFactory('ProductionEscrow');
+    const deposits = (await productions.getProductionData(id)).deposits;
+    return productionEscrowFactory.attach(deposits) as ProductionEscrow;
+  };
+
   beforeEach(async () => {
     [owner, organizer, approver, investor1, investor2, ...addresses] = await ethers.getSigners();
 
@@ -287,6 +293,82 @@ describe('StaxeProductions', function () {
     });
   });
 
+  // ---------------------------------- withdrawFunds
+
+  describe('withdrawFunds', async () => {
+    const data = {
+      id: 1000,
+      tokenSupply: 100,
+      tokenPrice: 100_000_000_000,
+    };
+
+    beforeEach(async () => {
+      await productions.connect(organizer).createNewProduction(data.id, data.tokenSupply, data.tokenPrice);
+      await productions.connect(owner).approveProduction(data.id);
+    });
+
+    it('should allow to withdraw funds after token buy', async () => {
+      // given
+      const tokensToBuy = 10;
+      const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: cost });
+      const escrow = await attachEscrow(data.id);
+
+      // when
+      const funds = await escrow.connect(organizer).getWithdrawableFunds();
+      await expect(await productions.connect(organizer).withdrawFunds(data.id, funds)).to.changeEtherBalance(
+        organizer,
+        funds
+      );
+      const updatedFunds = await escrow.connect(organizer).getWithdrawableFunds();
+
+      // then
+      expect(funds).to.be.equal(cost);
+      expect(updatedFunds).to.be.equal(0);
+    });
+
+    it('should refuse to withdraw more funds than available', async () => {
+      // given
+      const tokensToBuy = 10;
+      const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: cost });
+      const escrow = await attachEscrow(data.id);
+
+      // when
+      const funds = await escrow.connect(organizer).getWithdrawableFunds();
+      await expect(productions.connect(organizer).withdrawFunds(data.id, funds.mul(2))).to.be.revertedWith(
+        'NOT_ENOUGH_FUNDS_AVAILABLE'
+      );
+    });
+
+    it('should refuse to withdraw funds if not organizer', async () => {
+      // when
+      await expect(productions.connect(investor1).withdrawFunds(data.id, data.tokenPrice)).to.be.revertedWith(
+        'NOT_ORGANIZER'
+      );
+    });
+
+    it('should refuse to withdraw funds if not event owner', async () => {
+      // when
+      await expect(productions.connect(owner).withdrawFunds(data.id, data.tokenPrice)).to.be.revertedWith(
+        'NOT_CREATOR'
+      );
+    });
+
+    it('should refuse to withdraw from escrow directly', async () => {
+      // given
+      const escrow = await attachEscrow(data.id);
+
+      // when
+      await expect(escrow.connect(organizer).withdrawFunds(organizer.address, data.tokenPrice)).to.be.revertedWith(
+        'Ownable: caller is not the owner'
+      );
+      await expect(escrow.connect(owner).withdrawFunds(owner.address, data.tokenPrice)).to.be.revertedWith(
+        'Ownable: caller is not the owner'
+      );
+    });
+  });
+
   // ---------------------------------- proceeds
 
   describe('proceeds', async () => {
@@ -315,9 +397,7 @@ describe('StaxeProductions', function () {
       await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
 
       // then
-      const productionEscrowFactory = await ethers.getContractFactory('ProductionEscrow');
-      const deposits = (await productions.getProductionData(eventData.id)).deposits;
-      const escrow = productionEscrowFactory.attach(deposits) as ProductionEscrow;
+      const escrow = await attachEscrow(eventData.id);
 
       expect(await escrow.getWithdrawableProceeds(investor1.address)).to.be.equal(proceeds / shareToBuy);
     });
@@ -329,9 +409,7 @@ describe('StaxeProductions', function () {
       const cost = await productions.getNextTokensPrice(eventData.id, tokensToBuy);
       await productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost });
       const proceeds = eventData.tokenPrice;
-      const productionEscrowFactory = await ethers.getContractFactory('ProductionEscrow');
-      const deposits = (await productions.getProductionData(eventData.id)).deposits;
-      const escrow = productionEscrowFactory.attach(deposits) as ProductionEscrow;
+      const escrow = await attachEscrow(eventData.id);
 
       // when
       // proceeds 1
@@ -358,7 +436,7 @@ describe('StaxeProductions', function () {
         (eventData.tokenSupply - 4) * eventData.tokenPrice + eventData.tokenSupply * eventData.tokenPrice;
       await productions.connect(organizer).proceeds(eventData.id, { value: fantasticProceeds });
       // proceed per token is now 2 times the token price - we sell the token now based on proceeds
-      // you get immediately out
+      // investors get immediately out
 
       const newPricePerToken = await productions.getNextTokensPrice(eventData.id, 1);
       expect(newPricePerToken).to.eq(BigNumber.from(eventData.tokenPrice).mul(2));
@@ -373,6 +451,11 @@ describe('StaxeProductions', function () {
           .mul(tokensToBuy)
           .sub(proceeds * 2)
       );
+
+      // event finished, no more tokens to buy
+      await expect(
+        productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost })
+      ).to.be.revertedWith('NOT_OPEN');
     });
 
     it('should reject proceeds if not organizer', async () => {

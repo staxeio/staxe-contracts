@@ -111,6 +111,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
   }
 
   function withdrawFunds(uint256 id, uint256 amount) external {
+    require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
     require(productionData[id].id > 0, "NOT_EXIST");
     require(productionData[id].state == ProductionState.OPEN, "NOT_OPEN");
     require(amount > 0, "NOT_ZERO");

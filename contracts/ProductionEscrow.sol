@@ -40,7 +40,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
 
   function withdrawFunds(address receiver, uint256 amount) external override onlyOwner {
     require(receiver == _productionData().creator, "NOT_CREATOR");
-    require(fundsBalance >= amount, "NOT_ENOUGH_FUNDS");
+    require(fundsBalance >= amount, "NOT_ENOUGH_FUNDS_AVAILABLE");
     emit FundsPayout(receiver, amount);
     fundsBalance -= amount;
     payable(receiver).sendValue(amount);
