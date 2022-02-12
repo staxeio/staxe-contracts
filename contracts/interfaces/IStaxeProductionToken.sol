@@ -10,4 +10,10 @@ interface IStaxeProductionToken is IERC1155 {
     uint256 id,
     uint256 totalAmount
   ) external;
+
+  function mintToken(
+    address[2] memory owners,
+    uint256 id,
+    uint256[2] memory totalAmounts
+  ) external;
 }

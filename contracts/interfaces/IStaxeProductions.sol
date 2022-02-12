@@ -29,11 +29,39 @@ interface IStaxeProductions {
 
   // ------- Events
 
-  event ProductionCreated(uint256 indexed id, address indexed creator, uint256 tokenSupply);
+  event ProductionCreated(
+    uint256 indexed id,
+    address indexed creator,
+    uint256 tokenInvestorSupply,
+    uint256 tokenOrganizerSupply,
+    uint256 tokenTreasurySupply
+  );
   event ProductionFinished(uint256 indexed id);
   event ProductionTokenBought(uint256 indexed id, address indexed buyer, uint256 tokens);
 
   // ------- Functions
 
   function getProductionData(uint256 id) external view returns (ProductionData memory);
+
+  function createNewProduction(
+    uint256 id,
+    uint256 tokenInvestorSupply,
+    uint256 tokenOrganizerSupply,
+    uint256 tokenTreasurySupply,
+    uint256 tokenPrice
+  ) external;
+
+  function approveProduction(uint256 id) external;
+
+  function declineProduction(uint256 id) external;
+
+  function buyTokens(uint256 id, uint256 numTokens) external payable;
+
+  function withdrawFunds(uint256 id, uint256 amount) external;
+
+  function withdrawProceeds(uint256 id, uint256 amount) external;
+
+  function proceeds(uint256 id) external payable;
+
+  function finish(uint256 id) external payable;
 }

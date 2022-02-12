@@ -22,6 +22,19 @@ contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToke
     mint(address(owner), id, totalAmount, "");
   }
 
+  function mintToken(
+    address[2] memory owners,
+    uint256 id,
+    uint256[2] memory totalAmounts
+  ) external override {
+    if (totalAmounts[0] > 0) {
+      mint(owners[0], id, totalAmounts[0], "");
+    }
+    if (totalAmounts[1] > 0) {
+      mint(owners[1], id, totalAmounts[1], "");
+    }
+  }
+
   function _beforeTokenTransfer(
     address, /*operator*/
     address from,
@@ -32,17 +45,7 @@ contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToke
   ) internal override {
     for (uint256 i = 0; i < ids.length; i++) {
       IProductionTokenTracker tracker = tokenMinter[ids[i]];
-      if (_shouldCallTokenTransferTracker(from, to, address(tracker))) {
-        tracker.tokenTransfer(this, ids[i], from, to, amounts[i]);
-      }
+      tracker.tokenTransfer(this, ids[i], from, to, amounts[i]);
     }
-  }
-
-  function _shouldCallTokenTransferTracker(
-    address from,
-    address to,
-    address tracker
-  ) internal view returns (bool) {
-    return tracker != address(0) && from != address(this) && from != tracker && to != tracker;
   }
 }

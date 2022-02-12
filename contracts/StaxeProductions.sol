@@ -12,6 +12,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
   // ------- Contract state
 
   IStaxeProductionToken public token;
+  address public treasury;
   mapping(uint256 => ProductionData) public productionData;
 
   IEscrowFactory private escrowFactory;
@@ -20,11 +21,13 @@ contract StaxeProductions is Ownable, IStaxeProductions {
   constructor(
     IStaxeProductionToken _token,
     IEscrowFactory _escrowFactory,
-    IStaxeMembers _members
+    IStaxeMembers _members,
+    address _treasury
   ) Ownable() {
     token = _token;
     escrowFactory = _escrowFactory;
     members = _members;
+    treasury = _treasury;
   }
 
   function setEscrowFactory(IEscrowFactory _escrowFactory) external onlyOwner {
@@ -33,6 +36,10 @@ contract StaxeProductions is Ownable, IStaxeProductions {
 
   function setMembers(IStaxeMembers _members) external onlyOwner {
     members = _members;
+  }
+
+  function setTreasury(address _treasury) external onlyOwner {
+    treasury = _treasury;
   }
 
   function getProductionData(uint256 id) external view override returns (ProductionData memory) {
@@ -51,33 +58,37 @@ contract StaxeProductions is Ownable, IStaxeProductions {
 
   function createNewProduction(
     uint256 id,
-    uint256 tokenSupply,
+    uint256 tokenInvestorSupply,
+    uint256 tokenOrganizerSupply,
+    uint256 tokenTreasurySupply,
     uint256 tokenPrice
-  ) external {
+  ) external override {
     require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
     require(id > 0, "ID_0_NOT_ALLOWED");
-    require(tokenSupply > 0, "ZERO_TOKEN_SUPPLY");
+    require(tokenInvestorSupply > 0, "ZERO_TOKEN_SUPPLY");
     require(tokenPrice > 0, "ZERO_TOKEN_PRICE");
     require(productionData[id].id == 0, "PRODUCTION_EXISTS");
-    emit ProductionCreated(id, msg.sender, tokenSupply);
+    emit ProductionCreated(id, msg.sender, tokenInvestorSupply, tokenOrganizerSupply, tokenTreasurySupply);
     ProductionData storage data = productionData[id];
     data.id = id;
     data.creator = msg.sender;
-    data.tokenSupply = tokenSupply;
+    data.tokenSupply = tokenInvestorSupply + tokenOrganizerSupply + tokenTreasurySupply;
     data.tokenPrice = tokenPrice;
     data.state = ProductionState.CREATED;
+    data.tokensSoldCounter = tokenOrganizerSupply + tokenTreasurySupply;
     data.deposits = escrowFactory.newEscrow(token, this, id);
-    token.mintToken(data.deposits, id, tokenSupply);
+    token.mintToken(data.deposits, id, tokenInvestorSupply);
+    token.mintToken([msg.sender, treasury], id, [tokenOrganizerSupply, tokenTreasurySupply]);
   }
 
-  function approveProduction(uint256 id) external {
+  function approveProduction(uint256 id) external override {
     require(members.isApprover(msg.sender), "NOT_APPROVER");
     require(productionData[id].id > 0, "NOT_EXIST");
     require(productionData[id].state == ProductionState.CREATED, "NOT_CREATED");
     productionData[id].state = ProductionState.OPEN;
   }
 
-  function declineProduction(uint256 id) external {
+  function declineProduction(uint256 id) external override {
     require(members.isApprover(msg.sender), "NOT_APPROVER");
     require(productionData[id].id > 0, "NOT_EXIST");
     require(productionData[id].state == ProductionState.CREATED, "NOT_CREATED");
@@ -91,7 +102,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     return productionData[id].deposits.getNextTokenPrice(msg.sender, numTokens);
   }
 
-  function buyTokens(uint256 id, uint256 numTokens) external payable {
+  function buyTokens(uint256 id, uint256 numTokens) external payable override {
     // checks
     require(numTokens > 0, "ZERO_TOKEN");
     ProductionData storage data = productionData[id];
@@ -110,7 +121,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     }
   }
 
-  function withdrawFunds(uint256 id, uint256 amount) external {
+  function withdrawFunds(uint256 id, uint256 amount) external override {
     require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
     require(productionData[id].id > 0, "NOT_EXIST");
     require(productionData[id].state == ProductionState.OPEN, "NOT_OPEN");
@@ -118,14 +129,14 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     productionData[id].deposits.withdrawFunds(msg.sender, amount);
   }
 
-  function withdrawProceeds(uint256 id, uint256 amount) external {
+  function withdrawProceeds(uint256 id, uint256 amount) external override {
     require(members.isInvestor(msg.sender), "NOT_INVESTOR");
     ProductionData memory data = productionData[id];
     require(data.id > 0, "NOT_EXIST");
     data.deposits.withdrawProceeds(msg.sender, amount);
   }
 
-  function proceeds(uint256 id) external payable {
+  function proceeds(uint256 id) external payable override {
     // checks
     require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
     require(msg.value > 0, "ZERO_VALUE");
@@ -136,7 +147,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     data.deposits.proceeds{value: msg.value}(msg.sender);
   }
 
-  function finish(uint256 id) external payable {
+  function finish(uint256 id) external payable override {
     // checks
     require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
     ProductionData storage data = productionData[id];

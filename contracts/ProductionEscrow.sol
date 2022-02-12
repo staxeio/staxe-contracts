@@ -89,7 +89,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
     require(productionToken == tokenContract, "INVALID_CONTRACT");
     require(tokenId == productionId, "INVALID_TOKEN_ID");
     require(proceedsTotal == 0, "CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST");
-    require(_productionData().state == IStaxeProductions.ProductionState.OPEN, "PRODUCTION_NOT_OPEN");
+    require(_productionData().state != IStaxeProductions.ProductionState.FINISHED, "PRODUCTION_FINISHED");
   }
 
   function onERC1155Received(
