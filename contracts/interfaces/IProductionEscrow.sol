@@ -19,7 +19,7 @@ interface IProductionEscrow is IProductionTokenTracker {
 
   function proceeds(address organizer) external payable;
 
-  function withdrawProceeds(address investor, uint256 amount) external;
+  function withdrawProceeds(address investor) external;
 
   function getWithdrawableFunds() external view returns (uint256);
 

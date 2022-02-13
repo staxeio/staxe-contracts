@@ -21,10 +21,18 @@ interface IStaxeProductions {
     uint256 tokenSupply;
     uint256 tokensSoldCounter;
     uint256 tokenPrice;
+    uint256 maxTokensUnknownBuyer;
     ProductionState state;
     IProductionEscrow deposits;
-    // TODO: Price calculation function? With continuous proceeds, token should become more expensive
-    // Alternatively: Delegate price calculations to escrow?
+  }
+
+  struct CreateProduction {
+    uint256 id;
+    uint256 tokenInvestorSupply;
+    uint256 tokenOrganizerSupply;
+    uint256 tokenTreasurySupply;
+    uint256 tokenPrice;
+    uint256 maxTokensUnknownBuyer;
   }
 
   // ------- Events
@@ -43,13 +51,7 @@ interface IStaxeProductions {
 
   function getProductionData(uint256 id) external view returns (ProductionData memory);
 
-  function createNewProduction(
-    uint256 id,
-    uint256 tokenInvestorSupply,
-    uint256 tokenOrganizerSupply,
-    uint256 tokenTreasurySupply,
-    uint256 tokenPrice
-  ) external;
+  function createNewProduction(CreateProduction calldata newProduction) external;
 
   function approveProduction(uint256 id) external;
 
@@ -59,7 +61,7 @@ interface IStaxeProductions {
 
   function withdrawFunds(uint256 id, uint256 amount) external;
 
-  function withdrawProceeds(uint256 id, uint256 amount) external;
+  function withdrawProceeds(uint256 id) external;
 
   function proceeds(uint256 id) external payable;
 

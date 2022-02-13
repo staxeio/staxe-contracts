@@ -11,6 +11,24 @@ import {
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { BigNumber } from 'ethers';
 
+function newProduction(
+  id: number,
+  tokenInvestorSupply: number,
+  tokenPrice: number,
+  tokenOrganizerSupply = 0,
+  tokenTreasurySupply = 0,
+  maxTokensUnknownBuyer = 0
+) {
+  return {
+    id,
+    tokenInvestorSupply,
+    tokenOrganizerSupply,
+    tokenTreasurySupply,
+    tokenPrice,
+    maxTokensUnknownBuyer,
+  };
+}
+
 describe('StaxeProductions', function () {
   // contracts
   let token: StaxeProductionToken;
@@ -77,50 +95,30 @@ describe('StaxeProductions', function () {
   describe('createNewProduction', async () => {
     it('should create new production', async () => {
       // given
-      const data = {
-        id: 1000,
-        tokenSupply: 100,
-        tokenPrice: 5000,
-      };
+      const data = newProduction(1000, 100, 5000);
 
       // when
-      await expect(productions.connect(organizer).createNewProduction(data.id, data.tokenSupply, 0, 0, data.tokenPrice))
+      await expect(productions.connect(organizer).createNewProduction(data))
         .to.emit(productions, 'ProductionCreated')
-        .withArgs(data.id, organizer.address, data.tokenSupply, 0, 0);
+        .withArgs(data.id, organizer.address, data.tokenInvestorSupply, 0, 0);
       const created = await productions.getProductionData(data.id);
 
       // then
       expect(created.id).to.equal(data.id);
-      expect(created.tokenSupply).to.equal(data.tokenSupply);
+      expect(created.tokenSupply).to.equal(data.tokenInvestorSupply);
       expect(created.tokenPrice).to.equal(data.tokenPrice);
       expect(created.tokensSoldCounter).to.equal(0);
       expect(created.state).to.equal(1);
       expect(created.creator).to.equal(organizer.address);
-      expect(await token.balanceOf(created.deposits, data.id)).to.equal(data.tokenSupply);
+      expect(await token.balanceOf(created.deposits, data.id)).to.equal(data.tokenInvestorSupply);
     });
 
     it('should create new production with treasury and organizer share', async () => {
       // given
-      const data = {
-        id: 1000,
-        tokenInvestorSupply: 100,
-        tokenOrganizerSupply: 10,
-        tokenTreasurySupply: 10,
-        tokenPrice: 5000,
-      };
+      const data = newProduction(1000, 100, 5000, 10, 10);
 
       // when
-      await expect(
-        productions
-          .connect(organizer)
-          .createNewProduction(
-            data.id,
-            data.tokenInvestorSupply,
-            data.tokenOrganizerSupply,
-            data.tokenTreasurySupply,
-            data.tokenPrice
-          )
-      )
+      await expect(productions.connect(organizer).createNewProduction(data))
         .to.emit(productions, 'ProductionCreated')
         .withArgs(
           data.id,
@@ -146,27 +144,29 @@ describe('StaxeProductions', function () {
     });
 
     it('should fail to create event if not an organizer', async () => {
+      // given
+      const data = newProduction(1000, 100, 5000);
+
       // then
-      await expect(productions.connect(investor1).createNewProduction(4000, 1, 0, 0, 1)).to.be.revertedWith(
-        'NOT_ORGANIZER'
-      );
+      await expect(
+        productions.connect(investor1).createNewProduction(newProduction(1000, 100, 5000))
+      ).to.be.revertedWith('NOT_ORGANIZER');
     });
 
     it('should fail to create production with id 0', async () => {
       // then
-      await expect(productions.connect(organizer).createNewProduction(0, 1, 0, 0, 1)).to.be.revertedWith(
+      await expect(productions.connect(organizer).createNewProduction(newProduction(0, 100, 5000))).to.be.revertedWith(
         'ID_0_NOT_ALLOWED'
       );
     });
 
     it('should fail to create production with id that already exists', async () => {
       // given
-      const id = 6000;
-      await productions.connect(organizer).createNewProduction(id, 1, 0, 0, 1);
+      const data = newProduction(1000, 100, 5000);
+      await productions.connect(organizer).createNewProduction(data);
+
       // then
-      await expect(productions.connect(organizer).createNewProduction(id, 1, 0, 0, 1)).to.be.revertedWith(
-        'PRODUCTION_EXISTS'
-      );
+      await expect(productions.connect(organizer).createNewProduction(data)).to.be.revertedWith('PRODUCTION_EXISTS');
     });
   });
 
@@ -176,8 +176,9 @@ describe('StaxeProductions', function () {
     it('should get production data after create', async () => {
       // given
       const id = 600;
-      await productions.connect(organizer).createNewProduction(id, 100, 0, 0, 1000);
-      await productions.connect(organizer).createNewProduction(id + 1, 100, 0, 0, 2000);
+
+      await productions.connect(organizer).createNewProduction(newProduction(id, 100, 5000));
+      await productions.connect(organizer).createNewProduction(newProduction(id + 1, 100, 5000));
 
       // when
       const data1 = await productions.getProductionData(id);
@@ -185,6 +186,12 @@ describe('StaxeProductions', function () {
 
       // then
       expect(data1.id).to.be.equal(id);
+      expect(data1.tokenSupply).to.be.equal(100);
+      expect(data1.tokensSoldCounter).to.be.equal(0);
+      expect(data1.tokenPrice).to.be.equal(5000);
+      expect(data1.maxTokensUnknownBuyer).to.be.equal(0);
+      expect(data1.state).to.be.equal(1);
+      expect(data1.deposits).not.to.be.null;
       expect(data2.length).to.be.equal(2);
       expect(data2[0].id).to.be.equal(id);
       expect(data2[1].id).to.be.equal(id + 1);
@@ -197,7 +204,7 @@ describe('StaxeProductions', function () {
     it('should approve production by approver', async () => {
       // given
       const id = 500;
-      await productions.connect(organizer).createNewProduction(id, 100, 0, 0, 1000);
+      await productions.connect(organizer).createNewProduction(newProduction(id, 100, 5000));
 
       // when
       await productions.connect(approver).approveProduction(id);
@@ -209,7 +216,7 @@ describe('StaxeProductions', function () {
     it('should reject approval by non-approver', async () => {
       // given
       const id = 500;
-      await productions.connect(organizer).createNewProduction(id, 100, 0, 0, 1000);
+      await productions.connect(organizer).createNewProduction(newProduction(id, 100, 5000));
 
       // then
       await expect(productions.connect(organizer).approveProduction(id)).to.be.revertedWith('NOT_APPROVER');
@@ -222,7 +229,7 @@ describe('StaxeProductions', function () {
     it('should decline production by approver', async () => {
       // given
       const id = 500;
-      await productions.connect(organizer).createNewProduction(id, 100, 0, 0, 1000);
+      await productions.connect(organizer).createNewProduction(newProduction(id, 100, 5000));
 
       // when
       await productions.connect(approver).declineProduction(id);
@@ -234,7 +241,7 @@ describe('StaxeProductions', function () {
     it('should reject decline by non-approver', async () => {
       // given
       const id = 500;
-      await productions.connect(organizer).createNewProduction(id, 100, 0, 0, 1000);
+      await productions.connect(organizer).createNewProduction(newProduction(id, 100, 5000));
 
       // then
       await expect(productions.connect(organizer).declineProduction(id)).to.be.revertedWith('NOT_APPROVER');
@@ -244,14 +251,10 @@ describe('StaxeProductions', function () {
   // ---------------------------------- buyTokens
 
   describe('buyTokens', async () => {
-    const data = {
-      id: 600,
-      tokenSupply: 100,
-      tokenPrice: 100000000000,
-    };
+    const data = newProduction(600, 100, 100000000000, 0, 0, 10);
 
     beforeEach(async () => {
-      await productions.connect(organizer).createNewProduction(data.id, data.tokenSupply, 0, 0, data.tokenPrice);
+      await productions.connect(organizer).createNewProduction(data);
       await productions.connect(owner).approveProduction(data.id);
     });
 
@@ -293,6 +296,20 @@ describe('StaxeProductions', function () {
       expect(await token.balanceOf(organizer.address, data.id)).to.be.equal(tokensToBuy);
     });
 
+    it('should reject buying more tokens than allowed by non-investor', async () => {
+      // given
+      const tokensToBuy = 11;
+      const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+
+      // when
+      await expect(productions.connect(organizer).buyTokens(data.id, tokensToBuy, { value: cost })).to.be.revertedWith(
+        'MAX_TOKENS_EXCEEDED_FOR_NON_INVESTOR'
+      );
+
+      // then
+      expect(await token.balanceOf(organizer.address, data.id)).to.be.equal(0);
+    });
+
     it('should reject buying tokens when buying 0 tokens', async () => {
       // then
       await expect(productions.connect(investor1).buyTokens(data.id, 0, { value: 1 })).to.be.revertedWith('ZERO_TOKEN');
@@ -306,9 +323,11 @@ describe('StaxeProductions', function () {
     it('should reject buying tokens for not yet open event', async () => {
       // given
       const nonApprovedEventId = 777;
-      await productions
-        .connect(organizer)
-        .createNewProduction(nonApprovedEventId, data.tokenSupply, 0, 0, data.tokenPrice);
+      const nonApproved = {
+        ...data,
+        id: nonApprovedEventId,
+      };
+      await productions.connect(organizer).createNewProduction(nonApproved);
 
       // then
       await expect(productions.connect(investor1).buyTokens(nonApprovedEventId, 10, { value: 1 })).to.be.revertedWith(
@@ -384,14 +403,10 @@ describe('StaxeProductions', function () {
   // ---------------------------------- withdrawFunds
 
   describe('withdrawFunds', async () => {
-    const data = {
-      id: 1000,
-      tokenSupply: 100,
-      tokenPrice: 100_000_000_000,
-    };
+    const data = newProduction(1000, 100, 100_000_000_000);
 
     beforeEach(async () => {
-      await productions.connect(organizer).createNewProduction(data.id, data.tokenSupply, 0, 0, data.tokenPrice);
+      await productions.connect(organizer).createNewProduction(data);
       await productions.connect(owner).approveProduction(data.id);
     });
 
@@ -460,23 +475,17 @@ describe('StaxeProductions', function () {
   // ---------------------------------- proceeds
 
   describe('proceeds', async () => {
-    const eventData = {
-      id: 1000,
-      tokenSupply: 100,
-      tokenPrice: 100_000_000_000,
-    };
+    const eventData = newProduction(1000, 100, 100_000_000_000);
 
     beforeEach(async () => {
-      await productions
-        .connect(organizer)
-        .createNewProduction(eventData.id, eventData.tokenSupply, 0, 0, eventData.tokenPrice);
+      await productions.connect(organizer).createNewProduction(eventData);
       await productions.connect(owner).approveProduction(eventData.id);
     });
 
     it('should send proceeds and calculate token proceeds', async () => {
       // given
       const shareToBuy = 2;
-      const tokensToBuy = eventData.tokenSupply / shareToBuy;
+      const tokensToBuy = eventData.tokenInvestorSupply / shareToBuy;
       const cost = await productions.getNextTokensPrice(eventData.id, tokensToBuy);
       await productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost });
       const proceeds = 10000;
@@ -493,7 +502,7 @@ describe('StaxeProductions', function () {
     it('should calculate proceeds for multiple proceed sendings and finalize with not all tokens sold', async () => {
       // given
       const shareToBuy = 2;
-      const tokensToBuy = eventData.tokenSupply / shareToBuy;
+      const tokensToBuy = eventData.tokenInvestorSupply / shareToBuy;
       const cost = await productions.getNextTokensPrice(eventData.id, tokensToBuy);
       await productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost });
       const proceeds = eventData.tokenPrice;
@@ -502,26 +511,33 @@ describe('StaxeProductions', function () {
       // when
       // proceeds 1
       await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
-      await productions.connect(investor1).withdrawProceeds(eventData.id, proceeds / shareToBuy);
+      await expect(await productions.connect(investor1).withdrawProceeds(eventData.id)).to.changeEtherBalance(
+        investor1,
+        proceeds / 2
+      );
 
       // proceeds 2
       await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
-      await productions.connect(investor1).withdrawProceeds(eventData.id, proceeds / shareToBuy);
+      await productions.connect(investor1).withdrawProceeds(eventData.id);
 
       // proceeds 3 and 4
       await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
       await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
 
-      await productions.connect(investor1).withdrawProceeds(eventData.id, proceeds);
+      await expect(await productions.connect(investor1).withdrawProceeds(eventData.id)).to.changeEtherBalance(
+        investor1,
+        proceeds
+      );
       expect(await escrow.getWithdrawableProceeds(investor1.address)).to.be.equal(0);
       await expect(
         // Can't withdraw more than eligible
-        productions.connect(investor1).withdrawProceeds(eventData.id, proceeds)
-      ).to.be.revertedWith('NOT_ENOUGH_PROCEEDS_AVAILABLE');
+        await productions.connect(investor1).withdrawProceeds(eventData.id)
+      ).to.changeEtherBalance(investor1, 0);
 
       // token price now based on positive proceeds
       const fantasticProceeds =
-        (eventData.tokenSupply - 4) * eventData.tokenPrice + eventData.tokenSupply * eventData.tokenPrice;
+        (eventData.tokenInvestorSupply - 4) * eventData.tokenPrice +
+        eventData.tokenInvestorSupply * eventData.tokenPrice;
       await productions.connect(organizer).proceeds(eventData.id, { value: fantasticProceeds });
       // proceed per token is now 2 times the token price - we sell the token now based on proceeds
       // investors get immediately out

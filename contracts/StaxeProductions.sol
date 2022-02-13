@@ -56,29 +56,37 @@ contract StaxeProductions is Ownable, IStaxeProductions {
 
   // ------- Lifecycle
 
-  function createNewProduction(
-    uint256 id,
-    uint256 tokenInvestorSupply,
-    uint256 tokenOrganizerSupply,
-    uint256 tokenTreasurySupply,
-    uint256 tokenPrice
-  ) external override {
+  function createNewProduction(CreateProduction calldata newProduction) external override {
     require(members.isOrganizer(msg.sender), "NOT_ORGANIZER");
-    require(id > 0, "ID_0_NOT_ALLOWED");
-    require(tokenInvestorSupply > 0, "ZERO_TOKEN_SUPPLY");
-    require(tokenPrice > 0, "ZERO_TOKEN_PRICE");
-    require(productionData[id].id == 0, "PRODUCTION_EXISTS");
-    emit ProductionCreated(id, msg.sender, tokenInvestorSupply, tokenOrganizerSupply, tokenTreasurySupply);
-    ProductionData storage data = productionData[id];
-    data.id = id;
+    require(newProduction.id > 0, "ID_0_NOT_ALLOWED");
+    require(newProduction.tokenInvestorSupply > 0, "ZERO_TOKEN_SUPPLY");
+    require(newProduction.tokenPrice > 0, "ZERO_TOKEN_PRICE");
+    require(productionData[newProduction.id].id == 0, "PRODUCTION_EXISTS");
+    emit ProductionCreated(
+      newProduction.id,
+      msg.sender,
+      newProduction.tokenInvestorSupply,
+      newProduction.tokenOrganizerSupply,
+      newProduction.tokenTreasurySupply
+    );
+    ProductionData storage data = productionData[newProduction.id];
+    data.id = newProduction.id;
     data.creator = msg.sender;
-    data.tokenSupply = tokenInvestorSupply + tokenOrganizerSupply + tokenTreasurySupply;
-    data.tokenPrice = tokenPrice;
+    data.tokenSupply =
+      newProduction.tokenInvestorSupply +
+      newProduction.tokenOrganizerSupply +
+      newProduction.tokenTreasurySupply;
+    data.tokenPrice = newProduction.tokenPrice;
     data.state = ProductionState.CREATED;
-    data.tokensSoldCounter = tokenOrganizerSupply + tokenTreasurySupply;
-    data.deposits = escrowFactory.newEscrow(token, this, id);
-    token.mintToken(data.deposits, id, tokenInvestorSupply);
-    token.mintToken([msg.sender, treasury], id, [tokenOrganizerSupply, tokenTreasurySupply]);
+    data.maxTokensUnknownBuyer = newProduction.maxTokensUnknownBuyer;
+    data.tokensSoldCounter = newProduction.tokenOrganizerSupply + newProduction.tokenTreasurySupply;
+    data.deposits = escrowFactory.newEscrow(token, this, newProduction.id);
+    token.mintToken(data.deposits, newProduction.id, newProduction.tokenInvestorSupply);
+    token.mintToken(
+      [msg.sender, treasury],
+      newProduction.id,
+      [newProduction.tokenOrganizerSupply, newProduction.tokenTreasurySupply]
+    );
   }
 
   function approveProduction(uint256 id) external override {
@@ -108,6 +116,10 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     ProductionData storage data = productionData[id];
     require(data.id > 0, "NOT_EXIST");
     require(data.state == ProductionState.OPEN, "NOT_OPEN");
+    require(
+      data.maxTokensUnknownBuyer == 0 || members.isInvestor(msg.sender) || numTokens <= data.maxTokensUnknownBuyer,
+      "MAX_TOKENS_EXCEEDED_FOR_NON_INVESTOR"
+    );
     require(data.tokensSoldCounter + numTokens <= data.tokenSupply, "NOT_ENOUGH_TOKENS");
     uint256 price = data.deposits.getNextTokenPrice(msg.sender, numTokens);
     require(price <= msg.value, "NOT_ENOUGH_FUNDS_SENT");
@@ -129,11 +141,11 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     productionData[id].deposits.withdrawFunds(msg.sender, amount);
   }
 
-  function withdrawProceeds(uint256 id, uint256 amount) external override {
+  function withdrawProceeds(uint256 id) external override {
     require(members.isInvestor(msg.sender), "NOT_INVESTOR");
     ProductionData memory data = productionData[id];
     require(data.id > 0, "NOT_EXIST");
-    data.deposits.withdrawProceeds(msg.sender, amount);
+    data.deposits.withdrawProceeds(msg.sender);
   }
 
   function proceeds(uint256 id) external payable override {

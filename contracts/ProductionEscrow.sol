@@ -53,8 +53,8 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
     proceedsTotal += amount;
   }
 
-  function withdrawProceeds(address receiver, uint256 amount) external override onlyOwner {
-    require(_maxPayoutFor(receiver) >= amount, "NOT_ENOUGH_PROCEEDS_AVAILABLE");
+  function withdrawProceeds(address receiver) external override onlyOwner {
+    uint256 amount = _maxPayoutFor(receiver);
     emit ProceedsPayout(receiver, amount);
     proceedsPaid[receiver] += amount;
     payable(receiver).sendValue(amount);
