@@ -23,6 +23,7 @@ interface IStaxeProductions {
     uint256 tokenPrice;
     uint256 maxTokensUnknownBuyer;
     ProductionState state;
+    string dataHash;
     IProductionEscrow deposits;
   }
 
@@ -33,6 +34,7 @@ interface IStaxeProductions {
     uint256 tokenTreasurySupply;
     uint256 tokenPrice;
     uint256 maxTokensUnknownBuyer;
+    string dataHash;
   }
 
   // ------- Events

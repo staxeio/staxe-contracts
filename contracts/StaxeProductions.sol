@@ -80,6 +80,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     data.state = ProductionState.CREATED;
     data.maxTokensUnknownBuyer = newProduction.maxTokensUnknownBuyer;
     data.tokensSoldCounter = newProduction.tokenOrganizerSupply + newProduction.tokenTreasurySupply;
+    data.dataHash = newProduction.dataHash;
     data.deposits = escrowFactory.newEscrow(token, this, newProduction.id);
     token.mintToken(data.deposits, newProduction.id, newProduction.tokenInvestorSupply);
     token.mintToken(

@@ -17,7 +17,8 @@ function newProduction(
   tokenPrice: number,
   tokenOrganizerSupply = 0,
   tokenTreasurySupply = 0,
-  maxTokensUnknownBuyer = 0
+  maxTokensUnknownBuyer = 0,
+  dataHash = ''
 ) {
   return {
     id,
@@ -26,6 +27,7 @@ function newProduction(
     tokenTreasurySupply,
     tokenPrice,
     maxTokensUnknownBuyer,
+    dataHash,
   };
 }
 
