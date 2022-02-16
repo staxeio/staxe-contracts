@@ -2,13 +2,13 @@ import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
 import 'hardhat-contract-sizer';
 import 'hardhat-gas-reporter';
-import 'hardhat-typechain';
+import '@typechain/hardhat';
 import 'solidity-coverage';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
+import * as fs from 'fs';
 import { task } from 'hardhat/config';
 import { HardhatUserConfig } from 'hardhat/types';
-import * as fs from 'fs';
 
 // Load configuration. Fall back to template if not present
 let secrets = './secrets.json';
