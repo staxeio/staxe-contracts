@@ -53,6 +53,8 @@ interface IStaxeProductions {
 
   function getProductionData(uint256 id) external view returns (ProductionData memory);
 
+  function getProductionDataForProductions(uint256[] memory ids) external view returns (ProductionData[] memory);
+
   function createNewProduction(CreateProduction calldata newProduction) external;
 
   function approveProduction(uint256 id) external;

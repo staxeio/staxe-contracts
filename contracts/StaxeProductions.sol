@@ -46,7 +46,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     return productionData[id];
   }
 
-  function getProductionDataForProductions(uint256[] memory ids) external view returns (ProductionData[] memory) {
+  function getProductionDataForProductions(uint256[] memory ids) external view override returns (ProductionData[] memory) {
     ProductionData[] memory result = new ProductionData[](ids.length);
     for (uint256 i = 0; i < ids.length; i++) {
       result[i] = productionData[ids[i]];
