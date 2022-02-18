@@ -4,13 +4,13 @@ import { StaxeEscrowFactory, StaxeProductions, StaxeProductionToken, StaxeDAOTok
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 
-import contractConfig from '../contracts.json';
+import deployments from './deployments.json';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [owner, treasury] = await ethers.getSigners();
   console.log(`Deploying as ${owner.address}`);
   const chainId = await hre.getChainId();
-  const contract = contractConfig.contracts.filter((contract) => contract.chainId === chainId);
+  const contract = deployments.contracts.filter((contract) => contract.chainId === chainId);
   const treasuryByChainId = contract[0]?.treasury || treasury.address;
   console.log(`Deploying to chainId=${chainId} with treasury=${treasuryByChainId}`);
 
