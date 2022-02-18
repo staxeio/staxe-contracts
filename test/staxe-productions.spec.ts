@@ -292,7 +292,9 @@ describe('StaxeProductions', function () {
       const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
 
       // when
-      await productions.connect(organizer).buyTokens(data.id, tokensToBuy, { value: cost });
+      await expect(productions.connect(organizer).buyTokens(data.id, tokensToBuy, { value: cost }))
+        .to.emit(productions, 'ProductionTokenBought')
+        .withArgs(data.id, organizer.address, tokensToBuy, cost);
 
       // then
       expect(await token.balanceOf(organizer.address, data.id)).to.be.equal(tokensToBuy);
@@ -425,6 +427,10 @@ describe('StaxeProductions', function () {
         organizer,
         funds
       );
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: cost });
+      await expect(productions.connect(organizer).withdrawFunds(data.id, funds))
+        .to.emit(productions, 'FundsWithdrawn')
+        .withArgs(data.id, organizer.address, funds);
       const updatedFunds = await escrow.connect(organizer).getWithdrawableFunds();
 
       // then
@@ -493,7 +499,9 @@ describe('StaxeProductions', function () {
       const proceeds = 10000;
 
       // when
-      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
+      await expect(productions.connect(organizer).proceeds(eventData.id, { value: proceeds }))
+        .to.emit(productions, 'ProceedsSent')
+        .withArgs(eventData.id, organizer.address, proceeds);
 
       // then
       const escrow = await attachEscrow(eventData.id);
@@ -520,7 +528,9 @@ describe('StaxeProductions', function () {
 
       // proceeds 2
       await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
-      await productions.connect(investor1).withdrawProceeds(eventData.id);
+      await expect(productions.connect(investor1).withdrawProceeds(eventData.id))
+        .to.emit(productions, 'ProceedsWithdrawn')
+        .withArgs(eventData.id, investor1.address, proceeds / 2);
 
       // proceeds 3 and 4
       await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
@@ -594,7 +604,11 @@ describe('StaxeProductions', function () {
     it('should reject proceeds on closed event', async () => {
       // given
       await productions.connect(investor1).buyTokens(eventData.id, 1, { value: eventData.tokenPrice });
-      await productions.connect(organizer).finish(eventData.id, { value: 100000 });
+      await expect(productions.connect(organizer).finish(eventData.id, { value: 100000 }))
+        .to.emit(productions, 'ProductionFinished')
+        .withArgs(eventData.id)
+        .and.to.emit(productions, 'ProceedsSent')
+        .withArgs(eventData.id, organizer.address, 100000);
 
       // when
       await expect(productions.connect(organizer).proceeds(eventData.id, { value: 100000 })).to.be.revertedWith(

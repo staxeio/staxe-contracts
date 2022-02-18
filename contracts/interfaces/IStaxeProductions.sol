@@ -47,9 +47,14 @@ interface IStaxeProductions {
     uint256 tokenTreasurySupply
   );
   event ProductionFinished(uint256 indexed id);
-  event ProductionTokenBought(uint256 indexed id, address indexed buyer, uint256 tokens);
+  event ProductionTokenBought(uint256 indexed id, address indexed buyer, uint256 tokens, uint256 tokenPrice);
+  event FundsWithdrawn(uint256 indexed id, address indexed organizer, uint256 amount);
+  event ProceedsSent(uint256 indexed id, address indexed organizer, uint256 amount);
+  event ProceedsWithdrawn(uint256 indexed id, address indexed investor, uint256 amount);
 
   // ------- Functions
+
+  // Read production data
 
   function getProductionData(uint256 id) external view returns (ProductionData memory);
 

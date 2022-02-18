@@ -46,7 +46,12 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     return productionData[id];
   }
 
-  function getProductionDataForProductions(uint256[] memory ids) external view override returns (ProductionData[] memory) {
+  function getProductionDataForProductions(uint256[] memory ids)
+    external
+    view
+    override
+    returns (ProductionData[] memory)
+  {
     ProductionData[] memory result = new ProductionData[](ids.length);
     for (uint256 i = 0; i < ids.length; i++) {
       result[i] = productionData[ids[i]];
@@ -125,7 +130,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     uint256 price = data.deposits.getNextTokenPrice(msg.sender, numTokens);
     require(price <= msg.value, "NOT_ENOUGH_FUNDS_SENT");
     // update state
-    emit ProductionTokenBought(id, msg.sender, numTokens);
+    emit ProductionTokenBought(id, msg.sender, numTokens, price);
     data.tokensSoldCounter = numTokens + productionData[id].tokensSoldCounter;
     data.deposits.investorBuyToken{value: price}(msg.sender, numTokens);
     uint256 exceed = msg.value - price;
@@ -139,6 +144,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     require(productionData[id].id > 0, "NOT_EXIST");
     require(productionData[id].state == ProductionState.OPEN, "NOT_OPEN");
     require(amount > 0, "NOT_ZERO");
+    emit FundsWithdrawn(id, msg.sender, amount);
     productionData[id].deposits.withdrawFunds(msg.sender, amount);
   }
 
@@ -146,6 +152,8 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     require(members.isInvestor(msg.sender), "NOT_INVESTOR");
     ProductionData memory data = productionData[id];
     require(data.id > 0, "NOT_EXIST");
+    uint256 amount = data.deposits.getWithdrawableProceeds(msg.sender);
+    emit ProceedsWithdrawn(id, msg.sender, amount);
     data.deposits.withdrawProceeds(msg.sender);
   }
 
@@ -157,6 +165,7 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     require(data.id > 0, "NOT_EXIST");
     require(data.state == ProductionState.OPEN, "NOT_OPEN");
     // forward to escrow
+    emit ProceedsSent(id, msg.sender, msg.value);
     data.deposits.proceeds{value: msg.value}(msg.sender);
   }
 
@@ -169,8 +178,10 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     require(msg.sender == data.creator, "NOT_CREATOR");
     // update state
     if (msg.value > 0) {
+      emit ProceedsSent(id, msg.sender, msg.value);
       data.deposits.proceeds{value: msg.value}(msg.sender);
     }
+    emit ProductionFinished(id);
     data.state = ProductionState.FINISHED;
   }
 }
