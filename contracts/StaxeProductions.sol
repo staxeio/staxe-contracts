@@ -59,6 +59,24 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     return result;
   }
 
+  function getWithdrawableFunds(uint256 id) external view override returns (uint256) {
+    require(productionData[id].id > 0, "NOT_EXIST");
+    return productionData[id].deposits.getWithdrawableFunds();
+  }
+
+  function getWithdrawableProceeds(uint256 id) external view returns (uint256) {
+    require(productionData[id].id > 0, "NOT_EXIST");
+    if (!members.isInvestor(msg.sender)) {
+      return 0;
+    }
+    return productionData[id].deposits.getWithdrawableProceeds(msg.sender);
+  }
+
+  function getNextTokenPrice(uint256 id, uint256 tokensToBuy) external view returns (uint256) {
+    require(productionData[id].id > 0, "NOT_EXIST");
+    return productionData[id].deposits.getNextTokenPrice(msg.sender, tokensToBuy);
+  }
+
   // ------- Lifecycle
 
   function createNewProduction(CreateProduction calldata newProduction) external override {

@@ -60,11 +60,23 @@ interface IStaxeProductions {
 
   function getProductionDataForProductions(uint256[] memory ids) external view returns (ProductionData[] memory);
 
+  function getWithdrawableFunds(uint256 id) external view returns (uint256);
+
+  function getWithdrawableProceeds(uint256 id) external view returns (uint256);
+
+  function getNextTokenPrice(uint256 id, uint256 tokensToBuy) external view returns (uint256);
+
+  // Lifecycle actions
+
   function createNewProduction(CreateProduction calldata newProduction) external;
 
   function approveProduction(uint256 id) external;
 
   function declineProduction(uint256 id) external;
+
+  function finish(uint256 id) external payable;
+
+  // Financial actions
 
   function buyTokens(uint256 id, uint256 numTokens) external payable;
 
@@ -73,6 +85,4 @@ interface IStaxeProductions {
   function withdrawProceeds(uint256 id) external;
 
   function proceeds(uint256 id) external payable;
-
-  function finish(uint256 id) external payable;
 }
