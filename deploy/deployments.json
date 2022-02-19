@@ -21,6 +21,26 @@
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
+      "chainId": 137,
+      "name": "polygon mainnet",
+      "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "dao": "0x84F656cf1f812C97c96C57feC16D4b271Fd4613e",
+      "token": "0x94aA9b1DDc5CA292b12d7C31C8c4Fb94d11927b1",
+      "members": "0x7A4b2aD8A6f8685975De3290ad3c60B924335E09",
+      "productions": "0xaDA35A6F6D174423433e552B8b4cdC4EB14D1025",
+      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
+    },
+    {
+      "chainId": 80001,
+      "name": "mumbai",
+      "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "dao": "0x4A038F68f100147A4E0b736b02b7E844E3DC9A21",
+      "token": "0x06Da36862E87D70878B01d91FdFAAcc04407C59B",
+      "members": "0x48BB77d3C1bD27D547C483a2c182e80bbFd64631",
+      "productions": "0xCa02B423069C33582FE5DED89C46529F15ce9854",
+      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
+    },
+    {
       "chainId": 1337,
       "name": "hardhat",
       "treasury": "0xf66342abe568291a35Fd80Fe8B33162341e66adD",

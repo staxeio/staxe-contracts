@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { StaxeEscrowFactory, StaxeProductions, StaxeProductionToken, StaxeDAOToken, StaxeMembers } from '../typechain';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import * as fs from 'fs';
+import { promises as fs } from 'fs';
 
 import deployments from './deployments.json';
 
@@ -56,9 +56,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract.productions = productions.address;
     contract.owner = owner.address;
     const newContent = JSON.stringify(deployments, null, 2);
-    fs.writeFile(__dirname + '/deployments.json', newContent, function writeJSON(err) {
-      if (err) return console.error(err);
-    });
+    await fs.writeFile(__dirname + '/deployments.json', newContent);
     console.log('Updated contract addresses', newContent);
   }
 };

@@ -65,11 +65,13 @@ const config: HardhatUserConfig = {
       accounts: [`0x${networkConfig?.mainnet?.privateKey}`],
     },
     mumbai: {
-      url: `https://rpc-mumbai.maticvigil.com/v1//${maticAppId}`,
+      chainId: 80001,
+      url: `https://rpc-mumbai.maticvigil.com/v1/${maticAppId}`,
       accounts: [`0x${networkConfig?.mumbai?.privateKey}`],
     },
     matic: {
-      url: `https://rpc-mainnet.maticvigil.com/v1//${maticAppId}`,
+      chainId: 137,
+      url: `https://rpc-mainnet.maticvigil.com/v1/${maticAppId}`,
       accounts: [`0x${networkConfig?.matic?.privateKey}`],
     },
   },
