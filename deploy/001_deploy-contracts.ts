@@ -1,17 +1,17 @@
 import { ethers } from 'hardhat';
 import { StaxeEscrowFactory, StaxeProductions, StaxeProductionToken, StaxeDAOToken, StaxeMembers } from '../typechain';
-
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
+import * as fs from 'fs';
 
 import deployments from './deployments.json';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [owner, treasury] = await ethers.getSigners();
   console.log(`Deploying as ${owner.address}`);
-  const chainId = await hre.getChainId();
-  const contract = deployments.contracts.filter((contract) => contract.chainId === chainId);
-  const treasuryByChainId = contract[0]?.treasury || treasury.address;
+  const chainId = +(await hre.getChainId());
+  const contract = deployments.contracts.filter((contract) => contract.chainId === chainId)[0];
+  const treasuryByChainId = contract?.treasury || treasury?.address;
   console.log(`Deploying to chainId=${chainId} with treasury=${treasuryByChainId}`);
 
   // Tokens
@@ -48,6 +48,19 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Token
   await token.grantRole(await token.MINTER_ROLE(), productions.address);
+
+  if (contract && deployments) {
+    contract.dao = daoToken.address;
+    contract.token = token.address;
+    contract.members = members.address;
+    contract.productions = productions.address;
+    contract.owner = owner.address;
+    const newContent = JSON.stringify(deployments, null, 2);
+    fs.writeFile(__dirname + '/deployments.json', newContent, function writeJSON(err) {
+      if (err) return console.error(err);
+    });
+    console.log('Updated contract addresses', newContent);
+  }
 };
 
 module.exports = main;

@@ -16,4 +16,11 @@ interface IStaxeProductionToken is IERC1155 {
     uint256 id,
     uint256[2] memory totalAmounts
   ) external;
+
+  function canTransfer(
+    uint256 id,
+    address from,
+    address to,
+    uint256 amount
+  ) external view returns (bool);
 }

@@ -11,4 +11,12 @@ interface IProductionTokenTracker {
     address newOwner,
     uint256 numTokens
   ) external;
+
+  function canTransfer(
+    IERC1155 tokenContract,
+    uint256 tokenId,
+    address currentOwner,
+    address newOwner,
+    uint256 numTokens
+  ) external view returns (bool);
 }

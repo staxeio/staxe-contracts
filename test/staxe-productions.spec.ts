@@ -481,82 +481,79 @@ describe('StaxeProductions', function () {
   // ---------------------------------- proceeds
 
   describe('proceeds', async () => {
-    const eventData = newProduction(1000, 100, 100_000_000_000);
+    const data = newProduction(1000, 100, 100_000_000_000);
 
     beforeEach(async () => {
-      await productions.connect(organizer).createNewProduction(eventData);
-      await productions.connect(owner).approveProduction(eventData.id);
+      await productions.connect(organizer).createNewProduction(data);
+      await productions.connect(owner).approveProduction(data.id);
     });
 
     it('should send proceeds and calculate token proceeds', async () => {
       // given
       const shareToBuy = 2;
-      const tokensToBuy = eventData.tokenInvestorSupply / shareToBuy;
-      const cost = await productions.getNextTokensPrice(eventData.id, tokensToBuy);
-      await productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost });
+      const tokensToBuy = data.tokenInvestorSupply / shareToBuy;
+      const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: cost });
       const proceeds = 10000;
 
       // when
-      await expect(productions.connect(organizer).proceeds(eventData.id, { value: proceeds }))
+      await expect(productions.connect(organizer).proceeds(data.id, { value: proceeds }))
         .to.emit(productions, 'ProceedsSent')
-        .withArgs(eventData.id, organizer.address, proceeds);
+        .withArgs(data.id, organizer.address, proceeds);
 
       // then
-      expect(await productions.connect(investor1).getWithdrawableProceeds(eventData.id)).to.be.equal(
-        proceeds / shareToBuy
-      );
+      expect(await productions.connect(investor1).getWithdrawableProceeds(data.id)).to.be.equal(proceeds / shareToBuy);
     });
 
     it('should calculate proceeds for multiple proceed sendings and finalize with not all tokens sold', async () => {
       // given
       const shareToBuy = 2;
-      const tokensToBuy = eventData.tokenInvestorSupply / shareToBuy;
-      const cost = await productions.getNextTokensPrice(eventData.id, tokensToBuy);
-      await productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost });
-      const proceeds = eventData.tokenPrice;
+      const tokensToBuy = data.tokenInvestorSupply / shareToBuy;
+      const cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: cost });
+      const proceeds = data.tokenPrice;
 
       // when
       // proceeds 1
-      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
-      await expect(await productions.connect(investor1).withdrawProceeds(eventData.id)).to.changeEtherBalance(
+      await productions.connect(organizer).proceeds(data.id, { value: proceeds });
+      await expect(await productions.connect(investor1).withdrawProceeds(data.id)).to.changeEtherBalance(
         investor1,
         proceeds / 2
       );
 
       // proceeds 2
-      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
-      await expect(productions.connect(investor1).withdrawProceeds(eventData.id))
+      await productions.connect(organizer).proceeds(data.id, { value: proceeds });
+      await expect(productions.connect(investor1).withdrawProceeds(data.id))
         .to.emit(productions, 'ProceedsWithdrawn')
-        .withArgs(eventData.id, investor1.address, proceeds / 2);
+        .withArgs(data.id, investor1.address, proceeds / 2);
 
       // proceeds 3 and 4
-      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
-      await productions.connect(organizer).proceeds(eventData.id, { value: proceeds });
+      await productions.connect(organizer).proceeds(data.id, { value: proceeds });
+      await productions.connect(organizer).proceeds(data.id, { value: proceeds });
 
-      await expect(await productions.connect(investor1).withdrawProceeds(eventData.id)).to.changeEtherBalance(
+      await expect(await productions.connect(investor1).withdrawProceeds(data.id)).to.changeEtherBalance(
         investor1,
         proceeds
       );
-      expect(await productions.connect(investor1).getWithdrawableProceeds(eventData.id)).to.be.equal(0);
+      expect(await productions.connect(investor1).getWithdrawableProceeds(data.id)).to.be.equal(0);
       await expect(
         // Can't withdraw more than eligible
-        await productions.connect(investor1).withdrawProceeds(eventData.id)
+        await productions.connect(investor1).withdrawProceeds(data.id)
       ).to.changeEtherBalance(investor1, 0);
 
       // token price now based on positive proceeds
       const fantasticProceeds =
-        (eventData.tokenInvestorSupply - 4) * eventData.tokenPrice +
-        eventData.tokenInvestorSupply * eventData.tokenPrice;
-      await productions.connect(organizer).proceeds(eventData.id, { value: fantasticProceeds });
+        (data.tokenInvestorSupply - 4) * data.tokenPrice + data.tokenInvestorSupply * data.tokenPrice;
+      await productions.connect(organizer).proceeds(data.id, { value: fantasticProceeds });
       // proceed per token is now 2 times the token price - we sell the token now based on proceeds
       // investors get immediately out
 
-      const newPricePerToken = await productions.getNextTokensPrice(eventData.id, 1);
-      expect(newPricePerToken).to.eq(BigNumber.from(eventData.tokenPrice).mul(2));
+      const newPricePerToken = await productions.getNextTokensPrice(data.id, 1);
+      expect(newPricePerToken).to.eq(BigNumber.from(data.tokenPrice).mul(2));
 
       // Finish event, only 50% of tokens sold. Now proceeds calculation can be done based on tokens sold:
-      await productions.connect(organizer).finish(eventData.id, { value: 0 });
-      expect(await productions.connect(investor1).getWithdrawableProceeds(eventData.id)).to.be.equal(
+      await productions.connect(organizer).finish(data.id, { value: 0 });
+      expect(await productions.connect(investor1).getWithdrawableProceeds(data.id)).to.be.equal(
         // new token price was new proceeds per token. Now we finish and have only 50% sold, so this doubles.
         // Multiply with tokens we own and subtract the proceeds we have already taken.
         newPricePerToken
@@ -566,27 +563,46 @@ describe('StaxeProductions', function () {
       );
 
       // event finished, no more tokens to buy
+      await expect(productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: cost })).to.be.revertedWith(
+        'NOT_OPEN'
+      );
+    });
+
+    it('should still allow buying tokens after first proceed send', async () => {
+      // given
+      const shareToBuy = 4;
+      const tokensToBuy = data.tokenInvestorSupply / shareToBuy;
+      let cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      await productions.connect(investor1).buyTokens(data.id, tokensToBuy, { value: cost });
+      const proceeds = data.tokenPrice;
+
+      // when
+      expect(await token.canTransfer(data.id, investor1.address, investor2.address, 1)).to.be.true;
+      await token.connect(investor1).safeTransferFrom(investor1.address, investor2.address, data.id, 1, []);
+      await productions.connect(organizer).proceeds(data.id, { value: proceeds });
+      cost = await productions.getNextTokensPrice(data.id, tokensToBuy);
+      await productions.connect(investor2).buyTokens(data.id, tokensToBuy, { value: cost });
+
+      expect(await token.canTransfer(data.id, investor1.address, investor2.address, 1)).to.be.false;
       await expect(
-        productions.connect(investor1).buyTokens(eventData.id, tokensToBuy, { value: cost })
-      ).to.be.revertedWith('NOT_OPEN');
+        token.connect(investor1).safeTransferFrom(investor1.address, organizer.address, data.id, tokensToBuy, [])
+      ).to.be.revertedWith('CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST');
     });
 
     it('should reject proceeds if not organizer', async () => {
       // given
 
       // when
-      await expect(
-        productions.connect(investor1).proceeds(eventData.id, { value: eventData.tokenPrice })
-      ).to.be.revertedWith('NOT_ORGANIZER');
+      await expect(productions.connect(investor1).proceeds(data.id, { value: data.tokenPrice })).to.be.revertedWith(
+        'NOT_ORGANIZER'
+      );
     });
 
     it('should reject 0 proceeds', async () => {
       // given
 
       // when
-      await expect(productions.connect(organizer).proceeds(eventData.id, { value: 0 })).to.be.revertedWith(
-        'ZERO_VALUE'
-      );
+      await expect(productions.connect(organizer).proceeds(data.id, { value: 0 })).to.be.revertedWith('ZERO_VALUE');
     });
 
     it('should reject not existing event proceeds', async () => {
@@ -600,17 +616,15 @@ describe('StaxeProductions', function () {
 
     it('should reject proceeds on closed event', async () => {
       // given
-      await productions.connect(investor1).buyTokens(eventData.id, 1, { value: eventData.tokenPrice });
-      await expect(productions.connect(organizer).finish(eventData.id, { value: 100000 }))
+      await productions.connect(investor1).buyTokens(data.id, 1, { value: data.tokenPrice });
+      await expect(productions.connect(organizer).finish(data.id, { value: 100000 }))
         .to.emit(productions, 'ProductionFinished')
-        .withArgs(eventData.id)
+        .withArgs(data.id)
         .and.to.emit(productions, 'ProceedsSent')
-        .withArgs(eventData.id, organizer.address, 100000);
+        .withArgs(data.id, organizer.address, 100000);
 
       // when
-      await expect(productions.connect(organizer).proceeds(eventData.id, { value: 100000 })).to.be.revertedWith(
-        'NOT_OPEN'
-      );
+      await expect(productions.connect(organizer).proceeds(data.id, { value: 100000 })).to.be.revertedWith('NOT_OPEN');
     });
   });
 });

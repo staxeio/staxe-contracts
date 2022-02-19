@@ -55,7 +55,6 @@ const config: HardhatUserConfig = {
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${infuraProjectId}`,
       accounts: [`0x${networkConfig?.rinkeby?.privateKey}`],
-      gasPrice: 56000000000,
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${infuraProjectId}`,

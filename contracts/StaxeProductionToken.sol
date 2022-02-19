@@ -35,6 +35,16 @@ contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToke
     }
   }
 
+  function canTransfer(
+    uint256 id,
+    address from,
+    address to,
+    uint256 amount
+  ) external view returns (bool) {
+    IProductionTokenTracker tracker = tokenMinter[id];
+    return address(tracker) != address(0) ? tracker.canTransfer(this, id, from, to, amount) : true;
+  }
+
   function _beforeTokenTransfer(
     address, /*operator*/
     address from,
@@ -45,7 +55,17 @@ contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToke
   ) internal override {
     for (uint256 i = 0; i < ids.length; i++) {
       IProductionTokenTracker tracker = tokenMinter[ids[i]];
-      tracker.tokenTransfer(this, ids[i], from, to, amounts[i]);
+      if (_shouldCallTokenTransferTracker(from, to, address(tracker))) {
+        tracker.tokenTransfer(this, ids[i], from, to, amounts[i]);
+      }
     }
+  }
+
+  function _shouldCallTokenTransferTracker(
+    address from,
+    address, /*to*/
+    address tracker
+  ) internal view returns (bool) {
+    return tracker != address(0) && from != address(this) && from != tracker;
   }
 }
