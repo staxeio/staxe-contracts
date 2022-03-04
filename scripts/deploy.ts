@@ -18,6 +18,9 @@ async function main() {
   const events = await eventsFactory.deploy(token.address, factory.address);
   await events.deployed();
   console.log(`StaxeEvents deployed to ${events.address}`);
+
+  await token.grantRole(await token.MINTER_ROLE(), events.address);
+  console.log(`Minter role granted to ${events.address}`);
 }
 
 main()
