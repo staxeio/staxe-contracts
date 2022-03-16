@@ -78,7 +78,11 @@ interface IStaxeProductions {
 
   // Financial actions
 
-  function buyTokens(uint256 id, uint256 numTokens) external payable;
+  function buyTokens(
+    uint256 id,
+    uint256 numTokens,
+    address investor
+  ) external payable;
 
   function withdrawFunds(uint256 id, uint256 amount) external;
 

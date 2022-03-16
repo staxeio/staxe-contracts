@@ -6,15 +6,21 @@ import { StaxeMembers } from '../typechain';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 
+import deployments from './deployments.json';
+
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [deployer] = await ethers.getSigners();
 
   console.log('Deploying contracts account:', deployer.address);
   console.log('Account balance:', (await deployer.getBalance()).toString());
 
+  const chainId = +(await hre.getChainId());
+  const contract = deployments.contracts.filter((contract) => contract.chainId === chainId)[0];
+  console.log('Working with chainId:', chainId);
+
   // Members
   const membersFactory = await ethers.getContractFactory('StaxeMembers');
-  const members = (await membersFactory.attach('0x697AD5edAccBd3f9eE45C2Eb73122c9165DcD641')) as StaxeMembers;
+  const members = (await membersFactory.attach(contract.members)) as StaxeMembers;
   console.log(`StaxeMembers attached to ${members.address}`);
 
   // Users

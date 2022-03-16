@@ -134,7 +134,11 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     return productionData[id].deposits.getNextTokenPrice(msg.sender, numTokens);
   }
 
-  function buyTokens(uint256 id, uint256 numTokens) external payable override {
+  function buyTokens(
+    uint256 id,
+    uint256 numTokens,
+    address investor
+  ) external payable override {
     // checks
     require(numTokens > 0, "ZERO_TOKEN");
     ProductionData storage data = productionData[id];
@@ -145,12 +149,12 @@ contract StaxeProductions is Ownable, IStaxeProductions {
       "MAX_TOKENS_EXCEEDED_FOR_NON_INVESTOR"
     );
     require(data.tokensSoldCounter + numTokens <= data.tokenSupply, "NOT_ENOUGH_TOKENS");
-    uint256 price = data.deposits.getNextTokenPrice(msg.sender, numTokens);
+    uint256 price = data.deposits.getNextTokenPrice(investor, numTokens);
     require(price <= msg.value, "NOT_ENOUGH_FUNDS_SENT");
     // update state
-    emit ProductionTokenBought(id, msg.sender, numTokens, price);
+    emit ProductionTokenBought(id, investor, numTokens, price);
     data.tokensSoldCounter = numTokens + productionData[id].tokensSoldCounter;
-    data.deposits.investorBuyToken{value: price}(msg.sender, numTokens);
+    data.deposits.investorBuyToken{value: price}(investor, numTokens);
     uint256 exceed = msg.value - price;
     if (exceed > 0) {
       payable(msg.sender).transfer(exceed);

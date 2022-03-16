@@ -7,6 +7,4 @@ interface IStaxeMembers {
   function isApprover(address sender) external view returns (bool);
 
   function isInvestor(address sender) external view returns (bool);
-
-  function isDaoMember(address sender) external view returns (bool);
 }

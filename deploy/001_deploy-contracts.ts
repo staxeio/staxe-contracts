@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { StaxeEscrowFactory, StaxeProductions, StaxeProductionToken, StaxeDAOToken, StaxeMembers } from '../typechain';
+import { StaxeEscrowFactory, StaxeProductions, StaxeProductionToken, StaxeMembers } from '../typechain';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
@@ -15,10 +15,6 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(`Deploying to chainId=${chainId} with treasury=${treasuryByChainId}`);
 
   // Tokens
-  const daoTokenFactory = await ethers.getContractFactory('StaxeDAOToken');
-  const daoToken = (await daoTokenFactory.deploy(treasuryByChainId, 1_000_000, 1_000_000)) as StaxeDAOToken;
-  await daoToken.deployed();
-  console.log(`StaxeDAOToken deployed to ${daoToken.address} with treasury ${treasuryByChainId}`);
 
   const tokenFactory = await ethers.getContractFactory('StaxeProductionToken');
   const token = (await tokenFactory.deploy()) as StaxeProductionToken;
@@ -27,7 +23,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Members
   const membersFactory = await ethers.getContractFactory('StaxeMembers');
-  const members = (await membersFactory.deploy(daoToken.address)) as StaxeMembers;
+  const members = (await membersFactory.deploy()) as StaxeMembers;
   console.log(`StaxeMembers deployed to ${members.address}`);
 
   // Escrow Factory
@@ -50,7 +46,6 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await token.grantRole(await token.MINTER_ROLE(), productions.address);
 
   if (contract && deployments) {
-    contract.dao = daoToken.address;
     contract.token = token.address;
     contract.members = members.address;
     contract.productions = productions.address;
