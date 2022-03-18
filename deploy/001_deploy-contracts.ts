@@ -15,7 +15,6 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(`Deploying to chainId=${chainId} with treasury=${treasuryByChainId}`);
 
   // Tokens
-
   const tokenFactory = await ethers.getContractFactory('StaxeProductionToken');
   const token = (await tokenFactory.deploy()) as StaxeProductionToken;
   await token.deployed();
@@ -30,6 +29,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const escrowFactory = await ethers.getContractFactory('StaxeEscrowFactory');
   const factory = (await escrowFactory.deploy()) as StaxeEscrowFactory;
   await factory.deployed();
+  console.log(`StaxeEscrowFactory deployed to ${factory.address}`);
 
   // Productions
   const productionsFactory = await ethers.getContractFactory('StaxeProductions');
@@ -49,6 +49,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract.token = token.address;
     contract.members = members.address;
     contract.productions = productions.address;
+    contract.factory = factory.address;
     contract.owner = owner.address;
     const newContent = JSON.stringify(deployments, null, 2);
     await fs.writeFile(__dirname + '/deployments.json', newContent);

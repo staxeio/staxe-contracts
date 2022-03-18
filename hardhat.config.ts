@@ -17,7 +17,7 @@ if (!fs.existsSync(secrets)) {
   secrets = './secrets.template.json';
 }
 const currentDir = __dirname;
-const { etherscanApiKey, infuraProjectId, maticAppId, networkConfig } = require(secrets);
+const { etherscanApiKey, infuraProjectId, polygonscanApiKey, networkConfig } = require(secrets);
 
 // Tasks
 task('accounts', 'Prints the list of accounts', async (args, hre) => {
@@ -32,7 +32,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.11',
+        version: '0.8.13',
         settings: {
           optimizer: {
             enabled: true,
@@ -76,7 +76,15 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: etherscanApiKey,
+    apiKey: {
+      mainnet: etherscanApiKey,
+      ropsten: etherscanApiKey,
+      rinkeby: etherscanApiKey,
+      goerli: etherscanApiKey,
+      kovan: etherscanApiKey,
+      polygon: polygonscanApiKey,
+      polygonMumbai: polygonscanApiKey,
+    },
   },
   contractSizer: {
     alphaSort: true,

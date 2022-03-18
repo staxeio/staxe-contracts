@@ -7,15 +7,17 @@
       "token": "0xce873FE81526F1447a4De391e4efc5A52E4FB21c",
       "members": "0xad5510C2504f11F03Be80f0273a52dEA24Bb0D18",
       "productions": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
+      "factory": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
       "chainId": 42,
       "name": "kovan",
       "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
-      "token": "0x94aA9b1DDc5CA292b12d7C31C8c4Fb94d11927b1",
-      "members": "0x7A4b2aD8A6f8685975De3290ad3c60B924335E09",
-      "productions": "0xaDA35A6F6D174423433e552B8b4cdC4EB14D1025",
+      "token": "0xF968Eb4BAe372d6C6506e9B3e616bAC77733F2dE",
+      "members": "0xc6F2A1918330948b0B326B7EC23F0184Eceb8bbC",
+      "productions": "0x6FcA762Def740662Efb3F18c09BBB39CBC0652F4",
+      "factory": "0x33d8222c404fA0039515889D2b22c98d84472C0c",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
@@ -25,6 +27,7 @@
       "token": "0x94aA9b1DDc5CA292b12d7C31C8c4Fb94d11927b1",
       "members": "0x7A4b2aD8A6f8685975De3290ad3c60B924335E09",
       "productions": "0xaDA35A6F6D174423433e552B8b4cdC4EB14D1025",
+      "factory": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
@@ -34,6 +37,7 @@
       "token": "0xbCaBEfbaD13F46EFE6d91E37A3c6adA7f16B63e9",
       "members": "0x706F160839846015163EdeAF1150Bf54A6A7dF0a",
       "productions": "0x31cE7d7a06e381422173179eE6f638054d62cfa5",
+      "factory": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
@@ -43,6 +47,7 @@
       "token": "0xe684a83D5F4f40505918E6d5e4F98aF70157A299",
       "members": "0x9Ce51d8a88Ae5845269561907d4b2224861aA9de",
       "productions": "0xA6e372d3f2225BA680CB4AC53E5c72A6342c332e",
+      "factory": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
       "owner": "0x47d99A63D7135E30b626209FEeabB91cF464A905"
     }
   ]
