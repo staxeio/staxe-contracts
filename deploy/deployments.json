@@ -4,9 +4,9 @@
       "chainId": 4,
       "name": "rinkeby",
       "treasury": "0xF4A81e08BD48a89ca3D7cf7a77E9B80c8468a6bC",
-      "token": "0x36cBa8eA93261DEE4C9F0ab8D2C9CB55D843af37",
-      "members": "0x9A9f9dAF279189b431AE2Bce1E110cdbe276f929",
-      "productions": "0xf7B03bfbA17fdB318167Ea7A6De4A5918E5e4Cad",
+      "token": "0xce873FE81526F1447a4De391e4efc5A52E4FB21c",
+      "members": "0xad5510C2504f11F03Be80f0273a52dEA24Bb0D18",
+      "productions": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
@@ -31,9 +31,9 @@
       "chainId": 80001,
       "name": "mumbai",
       "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
-      "token": "0x06Da36862E87D70878B01d91FdFAAcc04407C59B",
-      "members": "0x48BB77d3C1bD27D547C483a2c182e80bbFd64631",
-      "productions": "0xCa02B423069C33582FE5DED89C46529F15ce9854",
+      "token": "0xbCaBEfbaD13F46EFE6d91E37A3c6adA7f16B63e9",
+      "members": "0x706F160839846015163EdeAF1150Bf54A6A7dF0a",
+      "productions": "0x31cE7d7a06e381422173179eE6f638054d62cfa5",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {

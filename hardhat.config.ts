@@ -66,12 +66,12 @@ const config: HardhatUserConfig = {
     },
     mumbai: {
       chainId: 80001,
-      url: `https://rpc-mumbai.maticvigil.com/v1/${maticAppId}`,
+      url: `https://polygon-mumbai.g.alchemy.com/v2/${networkConfig?.mumbai?.alchemyApiKey}`,
       accounts: [`0x${networkConfig?.mumbai?.privateKey}`],
     },
     matic: {
       chainId: 137,
-      url: `https://rpc-mainnet.maticvigil.com/v1/${maticAppId}`,
+      url: `https://polygon-mainnet.g.alchemy.com/v2/${networkConfig?.matic?.alchemyApiKey}`,
       accounts: [`0x${networkConfig?.matic?.privateKey}`],
     },
   },
