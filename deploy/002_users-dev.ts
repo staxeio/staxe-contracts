@@ -1,10 +1,12 @@
 import { ethers } from 'hardhat';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { StaxeEvents } from '../typechain';
+import { StaxeMembers } from '../typechain';
 
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
+
+import deployments from './deployments.json';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [deployer] = await ethers.getSigners();
@@ -12,10 +14,14 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log('Deploying contracts account:', deployer.address);
   console.log('Account balance:', (await deployer.getBalance()).toString());
 
-  // Events
-  const eventsFactory = await ethers.getContractFactory('StaxeEvents');
-  const events = (await eventsFactory.attach('0x697AD5edAccBd3f9eE45C2Eb73122c9165DcD641')) as StaxeEvents;
-  console.log(`StaxeEvents attached to ${events.address}`);
+  const chainId = +(await hre.getChainId());
+  const contract = deployments.contracts.filter((contract) => contract.chainId === chainId)[0];
+  console.log('Working with chainId:', chainId);
+
+  // Members
+  const membersFactory = await ethers.getContractFactory('StaxeMembers');
+  const members = (await membersFactory.attach(contract.members)) as StaxeMembers;
+  console.log(`StaxeMembers attached to ${members.address}`);
 
   // Users
   const admins = ['0x47d99A63D7135E30b626209FEeabB91cF464A905'];
@@ -28,19 +34,19 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const approvers = [admins[0], '0xf66342abe568291a35Fd80Fe8B33162341e66adD'];
 
   for (const admin of admins) {
-    await events.grantRole(await events.DEFAULT_ADMIN_ROLE(), admin);
+    await members.grantRole(await members.DEFAULT_ADMIN_ROLE(), admin);
     console.log('Granted admin role to:', admin);
   }
   for (const organizer of organizers) {
-    await events.grantRole(await events.ORGANIZER_ROLE(), organizer);
+    await members.grantRole(await members.ORGANIZER_ROLE(), organizer);
     console.log('Granted organizer role to:', organizer);
   }
   for (const investor of investors) {
-    await events.grantRole(await events.INVESTOR_ROLE(), investor);
+    await members.grantRole(await members.INVESTOR_ROLE(), investor);
     console.log('Granted investor role to:', investor);
   }
   for (const approver of approvers) {
-    await events.grantRole(await events.APPROVER_ROLE(), approver);
+    await members.grantRole(await members.APPROVER_ROLE(), approver);
     console.log('Granted approver role to:', approver);
   }
 };
