@@ -23,12 +23,12 @@
     {
       "chainId": 137,
       "name": "polygon mainnet",
-      "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
-      "token": "0x94aA9b1DDc5CA292b12d7C31C8c4Fb94d11927b1",
-      "members": "0x7A4b2aD8A6f8685975De3290ad3c60B924335E09",
-      "productions": "0xaDA35A6F6D174423433e552B8b4cdC4EB14D1025",
-      "factory": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
-      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
+      "treasury": "0x0fE0891A55a270F6fb9E010599A47605D388A1e9",
+      "token": "0xdcD904788E92e144aB51fddf03779Caf0b923313",
+      "members": "0xf6b0F14aCa4E7049793337d66c07099345ACe288",
+      "productions": "0x64579DaC33cd1051C3223CAb746881168dffdDbE",
+      "factory": "0x31DF3725e1aEEd81EbA2f2BD0d4736EeF306e4c3",
+      "owner": "0x2C2CfC54d472eCF97f5B43616A6e6ADAB1798563"
     },
     {
       "chainId": 80001,

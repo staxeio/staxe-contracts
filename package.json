@@ -14,7 +14,7 @@
     "deploy:rinkeby": "npx hardhat deploy --network rinkeby --tags test",
     "deploy:kovan": "npx hardhat deploy --network kovan --tags test",
     "deploy:mumbai": "npx hardhat deploy --network mumbai --tags test",
-    "deploy:matic": "npx hardhat deploy --network matic --tags test"
+    "deploy:matic": "npx hardhat deploy --network matic --tags prod"
   },
   "private": true,
   "dependencies": {
