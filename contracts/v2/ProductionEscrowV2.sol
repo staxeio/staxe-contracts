@@ -5,14 +5,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import "./interfaces/IProductionEscrow.sol";
-import "./interfaces/IStaxeProductions.sol";
+import "./interfaces/IProductionEscrowV2.sol";
+import "./interfaces/IStaxeProductionsV2.sol";
 
-contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
+contract ProductionEscrowV2 is Ownable, IERC1155Receiver, IProductionEscrowV2 {
   using Address for address payable;
 
   IERC1155 private productionToken;
-  IStaxeProductions private productions;
+  IStaxeProductionsV2 private productions;
   uint256 public productionId;
 
   uint256 public fundsBalance;
@@ -21,7 +21,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
 
   constructor(
     IERC1155 _productionToken,
-    IStaxeProductions _productions,
+    IStaxeProductionsV2 _productions,
     uint256 _productionId
   ) Ownable() {
     productionToken = _productionToken;
@@ -89,7 +89,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
     require(productionToken == tokenContract, "INVALID_CONTRACT");
     require(tokenId == productionId, "INVALID_TOKEN_ID");
     require(proceedsTotal == 0, "CANNOT_TRANSFER_WHEN_PROCEEDS_EXIST");
-    require(_productionData().state != IStaxeProductions.ProductionState.FINISHED, "PRODUCTION_FINISHED");
+    require(_productionData().state != IStaxeProductionsV2.ProductionState.FINISHED, "PRODUCTION_FINISHED");
   }
 
   function canTransfer(
@@ -103,7 +103,7 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
       productionToken == tokenContract &&
       tokenId == productionId &&
       proceedsTotal == 0 &&
-      _productionData().state != IStaxeProductions.ProductionState.FINISHED;
+      _productionData().state != IStaxeProductionsV2.ProductionState.FINISHED;
   }
 
   function onERC1155Received(
@@ -143,17 +143,17 @@ contract ProductionEscrow is Ownable, IERC1155Receiver, IProductionEscrow {
   }
 
   function _amountPerToken() internal view returns (uint256) {
-    IStaxeProductions.ProductionData memory data = _productionData();
+    IStaxeProductionsV2.ProductionData memory data = _productionData();
     // Production finished?
     // -> No more tokens sold. Unsold tokens do not count for payout calculations.
     // -> Otherwise calculate based on assumption that more tokens are sold.
     uint256 divideByTokens = (
-      data.state == IStaxeProductions.ProductionState.FINISHED ? data.tokensSoldCounter : data.tokenSupply
+      data.state == IStaxeProductionsV2.ProductionState.FINISHED ? data.tokensSoldCounter : data.tokenSupply
     );
     return (proceedsTotal - (proceedsTotal % divideByTokens)) / divideByTokens;
   }
 
-  function _productionData() internal view returns (IStaxeProductions.ProductionData memory) {
+  function _productionData() internal view returns (IStaxeProductionsV2.ProductionData memory) {
     return productions.getProductionData(productionId);
   }
 }

@@ -2,26 +2,26 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IStaxeProductionToken.sol";
-import "./interfaces/IProductionEscrow.sol";
-import "./interfaces/IStaxeMembers.sol";
-import "./interfaces/IEscrowFactory.sol";
-import "./interfaces/IStaxeProductions.sol";
+import "./interfaces/IStaxeProductionTokenV2.sol";
+import "./interfaces/IProductionEscrowV2.sol";
+import "./interfaces/IStaxeMembersV2.sol";
+import "./interfaces/IEscrowFactoryV2.sol";
+import "./interfaces/IStaxeProductionsV2.sol";
 
-contract StaxeProductions is Ownable, IStaxeProductions {
+contract StaxeProductionsV2 is Ownable, IStaxeProductionsV2 {
   // ------- Contract state
 
-  IStaxeProductionToken public token;
+  IStaxeProductionTokenV2 public token;
   address public treasury;
   mapping(uint256 => ProductionData) public productionData;
 
-  IEscrowFactory private escrowFactory;
-  IStaxeMembers private members;
+  IEscrowFactoryV2 private escrowFactory;
+  IStaxeMembersV2 private members;
 
   constructor(
-    IStaxeProductionToken _token,
-    IEscrowFactory _escrowFactory,
-    IStaxeMembers _members,
+    IStaxeProductionTokenV2 _token,
+    IEscrowFactoryV2 _escrowFactory,
+    IStaxeMembersV2 _members,
     address _treasury
   ) Ownable() {
     token = _token;
@@ -30,11 +30,11 @@ contract StaxeProductions is Ownable, IStaxeProductions {
     treasury = _treasury;
   }
 
-  function setEscrowFactory(IEscrowFactory _escrowFactory) external onlyOwner {
+  function setEscrowFactory(IEscrowFactoryV2 _escrowFactory) external onlyOwner {
     escrowFactory = _escrowFactory;
   }
 
-  function setMembers(IStaxeMembers _members) external onlyOwner {
+  function setMembers(IStaxeMembersV2 _members) external onlyOwner {
     members = _members;
   }
 

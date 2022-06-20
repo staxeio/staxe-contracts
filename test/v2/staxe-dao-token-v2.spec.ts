@@ -1,15 +1,15 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { StaxeDAOToken } from '../typechain';
-import { generateLeaf, generateProof } from './utils/merkle-utils';
+import { StaxeDAOTokenV2 } from '../../typechain';
+import { generateLeaf, generateProof } from '../utils/merkle-utils';
 
-import MerkleGenerator from '../utils/merkle-generator';
+import MerkleGenerator from '../../utils/merkle-generator';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
-import { ethersParse, timeTravel } from './utils/ethers-utils';
+import { ethersParse, timeTravel } from '../utils/ethers-utils';
 
 describe('StaxeDAOToken', function () {
   // contracts
-  let token: StaxeDAOToken;
+  let token: StaxeDAOTokenV2;
 
   // actors
   let owner: SignerWithAddress;
@@ -25,8 +25,8 @@ describe('StaxeDAOToken', function () {
     [owner, treasury, ...addresses] = await ethers.getSigners();
 
     // create contracts
-    const tokenFactory = await ethers.getContractFactory('StaxeDAOToken');
-    token = (await tokenFactory.deploy(treasury.getAddress(), TREASURY_INIT, AIRDROP_INIT)) as StaxeDAOToken;
+    const tokenFactory = await ethers.getContractFactory('StaxeDAOTokenV2');
+    token = (await tokenFactory.deploy(treasury.getAddress(), TREASURY_INIT, AIRDROP_INIT)) as StaxeDAOTokenV2;
   });
 
   // ------------------------------------ init token ------------------------------------

@@ -4,9 +4,9 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IStaxeMembers.sol";
+import "./interfaces/IStaxeMembersV2.sol";
 
-contract StaxeMembers is IStaxeMembers, AccessControlEnumerable, Ownable {
+contract StaxeMembersV2 is IStaxeMembersV2, AccessControlEnumerable, Ownable {
   bytes32 public constant INVESTOR_ROLE = keccak256("INVESTOR_ROLE");
   bytes32 public constant ORGANIZER_ROLE = keccak256("ORGANIZER_ROLE");
   bytes32 public constant APPROVER_ROLE = keccak256("APPROVER_ROLE");

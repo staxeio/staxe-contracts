@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { StaxeMembers } from '../typechain';
+import { StaxeMembersV2 } from '../typechain';
 
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
@@ -19,8 +19,8 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log('Working with chainId:', chainId);
 
   // Members
-  const membersFactory = await ethers.getContractFactory('StaxeMembers');
-  const members = (await membersFactory.attach(contract.members)) as StaxeMembers;
+  const membersFactory = await ethers.getContractFactory('StaxeMembersV2');
+  const members = (await membersFactory.attach(contract.members)) as StaxeMembersV2;
   console.log(`StaxeMembers attached to ${members.address}`);
 
   // Users

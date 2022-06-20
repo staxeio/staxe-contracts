@@ -3,17 +3,17 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC1155/presets/ERC1155PresetMinterPauser.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./interfaces/IStaxeProductionToken.sol";
-import "./interfaces/IProductionTokenTracker.sol";
+import "./interfaces/IStaxeProductionTokenV2.sol";
+import "./interfaces/IProductionTokenTrackerV2.sol";
 
-contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToken {
-  mapping(uint256 => IProductionTokenTracker) tokenMinter; // notify token minter on token transfers if sender != tokenMinter
+contract StaxeProductionTokenV2 is ERC1155PresetMinterPauser, IStaxeProductionTokenV2 {
+  mapping(uint256 => IProductionTokenTrackerV2) tokenMinter; // notify token minter on token transfers if sender != tokenMinter
 
   // Not a decentralized URL, but we're not selling an NFT
   constructor() ERC1155PresetMinterPauser("https://staxe.app/api/tokens/{id}") {}
 
   function mintToken(
-    IProductionTokenTracker owner,
+    IProductionTokenTrackerV2 owner,
     uint256 id,
     uint256 totalAmount
   ) external override {
@@ -41,7 +41,7 @@ contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToke
     address to,
     uint256 amount
   ) external view returns (bool) {
-    IProductionTokenTracker tracker = tokenMinter[id];
+    IProductionTokenTrackerV2 tracker = tokenMinter[id];
     return address(tracker) != address(0) ? tracker.canTransfer(this, id, from, to, amount) : true;
   }
 
@@ -54,7 +54,7 @@ contract StaxeProductionToken is ERC1155PresetMinterPauser, IStaxeProductionToke
     bytes memory /*data*/
   ) internal override {
     for (uint256 i = 0; i < ids.length; i++) {
-      IProductionTokenTracker tracker = tokenMinter[ids[i]];
+      IProductionTokenTrackerV2 tracker = tokenMinter[ids[i]];
       if (_shouldCallTokenTransferTracker(from, to, address(tracker))) {
         tracker.tokenTransfer(this, ids[i], from, to, amounts[i]);
       }

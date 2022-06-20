@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import {
-  ProductionEscrow,
-  StaxeEscrowFactory,
-  StaxeMembers,
-  StaxeProductions,
-  StaxeProductionToken,
-} from '../typechain';
+  ProductionEscrowV2,
+  StaxeEscrowFactoryV2,
+  StaxeMembersV2,
+  StaxeProductionsV2,
+  StaxeProductionTokenV2,
+} from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { BigNumber } from 'ethers';
 
@@ -32,8 +32,8 @@ function newProduction(
 
 describe('StaxeProductions', function () {
   // contracts
-  let token: StaxeProductionToken;
-  let productions: StaxeProductions;
+  let token: StaxeProductionTokenV2;
+  let productions: StaxeProductionsV2;
 
   // actors
   let owner: SignerWithAddress;
@@ -45,9 +45,9 @@ describe('StaxeProductions', function () {
   let addresses: SignerWithAddress[];
 
   const attachEscrow = async (id: number) => {
-    const productionEscrowFactory = await ethers.getContractFactory('ProductionEscrow');
+    const productionEscrowFactory = await ethers.getContractFactory('ProductionEscrowV2');
     const deposits = (await productions.getProductionData(id)).deposits;
-    return productionEscrowFactory.attach(deposits) as ProductionEscrow;
+    return productionEscrowFactory.attach(deposits) as ProductionEscrowV2;
   };
 
   beforeEach(async () => {
@@ -55,24 +55,24 @@ describe('StaxeProductions', function () {
 
     // create contracts
     // --- production token
-    const tokenFactory = await ethers.getContractFactory('StaxeProductionToken');
-    token = (await tokenFactory.deploy()) as StaxeProductionToken;
+    const tokenFactory = await ethers.getContractFactory('StaxeProductionTokenV2');
+    token = (await tokenFactory.deploy()) as StaxeProductionTokenV2;
 
-    const membersFactory = await ethers.getContractFactory('StaxeMembers');
-    const members = (await membersFactory.deploy()) as StaxeMembers;
+    const membersFactory = await ethers.getContractFactory('StaxeMembersV2');
+    const members = (await membersFactory.deploy()) as StaxeMembersV2;
 
     // --- escrow factory
-    const escrowFactoryFactory = await ethers.getContractFactory('StaxeEscrowFactory');
-    const escrowFactory = (await escrowFactoryFactory.deploy()) as StaxeEscrowFactory;
+    const escrowFactoryFactory = await ethers.getContractFactory('StaxeEscrowFactoryV2');
+    const escrowFactory = (await escrowFactoryFactory.deploy()) as StaxeEscrowFactoryV2;
 
     // --- productions
-    const productionsFactory = await ethers.getContractFactory('StaxeProductions');
+    const productionsFactory = await ethers.getContractFactory('StaxeProductionsV2');
     productions = (await productionsFactory.deploy(
       token.address,
       escrowFactory.address,
       members.address,
       treasury.address
-    )) as StaxeProductions;
+    )) as StaxeProductionsV2;
     await token.grantRole(await token.MINTER_ROLE(), productions.address);
 
     // define roles

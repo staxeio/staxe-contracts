@@ -2,13 +2,13 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "./IProductionEscrow.sol";
-import "./IStaxeProductions.sol";
+import "./IProductionEscrowV2.sol";
+import "./IStaxeProductionsV2.sol";
 
-interface IEscrowFactory {
+interface IEscrowFactoryV2 {
   function newEscrow(
     IERC1155 token,
-    IStaxeProductions productions,
+    IStaxeProductionsV2 productions,
     uint256 productionId
-  ) external returns (IProductionEscrow);
+  ) external returns (IProductionEscrowV2);
 }

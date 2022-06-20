@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import "./IProductionTokenTracker.sol";
+import "./IProductionTokenTrackerV2.sol";
 
-interface IProductionEscrow is IProductionTokenTracker {
+interface IProductionEscrowV2 is IProductionTokenTrackerV2 {
   // ---- Events
 
   event FundsDeposit(address indexed payer, uint256 amount);

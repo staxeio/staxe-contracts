@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
-contract StaxeDAOToken is ERC20, ERC20Permit, Ownable {
+contract StaxeDAOTokenV2 is ERC20, ERC20Permit, Ownable {
   using Counters for Counters.Counter;
   mapping(address => mapping(uint256 => uint256)) public claimed;
   bytes32 public merkleRoot;

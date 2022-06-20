@@ -2,9 +2,9 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "./IProductionEscrow.sol";
+import "./IProductionEscrowV2.sol";
 
-interface IStaxeProductions {
+interface IStaxeProductionsV2 {
   // ------- Data structures
 
   enum ProductionState {
@@ -24,7 +24,7 @@ interface IStaxeProductions {
     uint256 maxTokensUnknownBuyer;
     ProductionState state;
     string dataHash;
-    IProductionEscrow deposits;
+    IProductionEscrowV2 deposits;
   }
 
   struct CreateProduction {

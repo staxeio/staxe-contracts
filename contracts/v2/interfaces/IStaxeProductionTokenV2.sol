@@ -2,11 +2,11 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "./IProductionTokenTracker.sol";
+import "./IProductionTokenTrackerV2.sol";
 
-interface IStaxeProductionToken is IERC1155 {
+interface IStaxeProductionTokenV2 is IERC1155 {
   function mintToken(
-    IProductionTokenTracker owner,
+    IProductionTokenTrackerV2 owner,
     uint256 id,
     uint256 totalAmount
   ) external;
