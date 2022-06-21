@@ -19,7 +19,9 @@
   "private": true,
   "dependencies": {
     "@openzeppelin/contracts": "^4.6.0",
-    "@openzeppelin/contracts-upgradeable": "^4.6.0"
+    "@openzeppelin/contracts-upgradeable": "^4.6.0",
+    "@uniswap/v3-core": "^1.0.1",
+    "@uniswap/v3-periphery": "^1.4.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.6",
