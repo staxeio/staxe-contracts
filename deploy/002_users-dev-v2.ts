@@ -6,7 +6,7 @@ import { StaxeMembersV2 } from '../typechain';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 
-import deployments from './deployments.json';
+import deployments from '../deployments/deployments-v2.json';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [deployer] = await ethers.getSigners();
@@ -52,4 +52,4 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 module.exports = main;
-module.exports.tags = ['develop'];
+module.exports.tags = ['develop', 'v2'];

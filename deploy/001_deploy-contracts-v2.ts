@@ -4,7 +4,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
 
-import deployments from './deployments-v2.json';
+import deployments from '../deployments/deployments-v2.json';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [owner, treasury] = await ethers.getSigners();
@@ -18,18 +18,18 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const tokenFactory = await ethers.getContractFactory('StaxeProductionTokenV2');
   const token = (await tokenFactory.deploy()) as StaxeProductionTokenV2;
   await token.deployed();
-  console.log(`StaxeProductionToken deployed to ${token.address}`);
+  console.log(`StaxeProductionTokenV2 deployed to ${token.address}`);
 
   // Members
   const membersFactory = await ethers.getContractFactory('StaxeMembersV2');
   const members = (await membersFactory.deploy()) as StaxeMembersV2;
-  console.log(`StaxeMembers deployed to ${members.address}`);
+  console.log(`StaxeMembersV2 deployed to ${members.address}`);
 
   // Escrow Factory
   const escrowFactory = await ethers.getContractFactory('StaxeEscrowFactoryV2');
   const factory = (await escrowFactory.deploy()) as StaxeEscrowFactoryV2;
   await factory.deployed();
-  console.log(`StaxeEscrowFactory deployed to ${factory.address}`);
+  console.log(`StaxeEscrowFactoryV2 deployed to ${factory.address}`);
 
   // Productions
   const productionsFactory = await ethers.getContractFactory('StaxeProductionsV2');
@@ -40,7 +40,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     treasuryByChainId
   )) as StaxeProductionsV2;
   await productions.deployed();
-  console.log(`StaxeProductions deployed to ${productions.address} with treasury ${treasuryByChainId}`);
+  console.log(`StaxeProductionsV2 deployed to ${productions.address} with treasury ${treasuryByChainId}`);
 
   // Token
   await token.grantRole(await token.MINTER_ROLE(), productions.address);
@@ -52,10 +52,9 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract.factory = factory.address;
     contract.owner = owner.address;
     const newContent = JSON.stringify(deployments, null, 2);
-    await fs.writeFile(__dirname + '/deployments.json', newContent);
-    console.log('Updated contract addresses', newContent);
+    await fs.writeFile(__dirname + '/../deployments/deployments-v2.json', newContent);
   }
 };
 
 module.exports = main;
-module.exports.tags = ['develop'];
+module.exports.tags = ['develop', 'v2'];

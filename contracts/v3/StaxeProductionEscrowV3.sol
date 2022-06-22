@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 import "./interfaces/IProductionEscrowV3.sol";
 
-contract StaxeProductionEscrow is Ownable, IProductionEscrowV3, IERC1155Receiver {
+contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
   IERC1155 private tokenContract;
   ProductionData public productionData;
   uint256 public tokenPrice;
@@ -18,11 +18,14 @@ contract StaxeProductionEscrow is Ownable, IProductionEscrowV3, IERC1155Receiver
   uint256 public raisedBalance;
   uint256 public availableFunds;
 
+  constructor(ProductionData memory _productionData, uint256 _tokenPrice) Ownable() {
+    productionData = _productionData;
+    tokenPrice = _tokenPrice;
+  }
+
   // --- IProductionEscrowV3 functions ---
 
-  function createProduction() external onlyOwner {}
-
-  function getProductionData() external view returns (ProductionData memory) {
+  function getProductionData() external view override returns (ProductionData memory) {
     return productionData;
   }
 

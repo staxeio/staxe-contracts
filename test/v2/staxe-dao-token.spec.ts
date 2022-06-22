@@ -7,7 +7,7 @@ import MerkleGenerator from '../../utils/merkle-generator';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { ethersParse, timeTravel } from '../utils/ethers-utils';
 
-describe('StaxeDAOToken', function () {
+describe('StaxeDAOTokenV2', function () {
   // contracts
   let token: StaxeDAOTokenV2;
 

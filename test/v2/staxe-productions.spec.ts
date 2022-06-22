@@ -30,7 +30,7 @@ function newProduction(
   };
 }
 
-describe('StaxeProductions', function () {
+describe('StaxeProductionsV2', function () {
   // contracts
   let token: StaxeProductionTokenV2;
   let productions: StaxeProductionsV2;
@@ -42,7 +42,6 @@ describe('StaxeProductions', function () {
   let investor1: SignerWithAddress;
   let investor2: SignerWithAddress;
   let treasury: SignerWithAddress;
-  let addresses: SignerWithAddress[];
 
   const attachEscrow = async (id: number) => {
     const productionEscrowFactory = await ethers.getContractFactory('ProductionEscrowV2');
@@ -51,7 +50,7 @@ describe('StaxeProductions', function () {
   };
 
   beforeEach(async () => {
-    [owner, organizer, approver, investor1, investor2, treasury, ...addresses] = await ethers.getSigners();
+    [owner, organizer, approver, investor1, investor2, treasury] = await ethers.getSigners();
 
     // create contracts
     // --- production token
@@ -141,9 +140,6 @@ describe('StaxeProductions', function () {
     });
 
     it('should fail to create event if not an organizer', async () => {
-      // given
-      const data = newProduction(1000, 100, 5000);
-
       // then
       await expect(
         productions.connect(investor1).createNewProduction(newProduction(1000, 100, 5000))

@@ -25,7 +25,6 @@ interface IProductionEscrowV3 {
     IERC20 currency;
     ProductionState state;
     string dataHash;
-    IProductionEscrowV3 deposits;
   }
 
   function getProductionData() external view returns (ProductionData memory);

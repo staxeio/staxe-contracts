@@ -18,6 +18,7 @@ if (!fs.existsSync(secrets)) {
   secrets = './secrets.template.json';
 }
 const currentDir = __dirname;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { etherscanApiKey, infuraProjectId, polygonscanApiKey, networkConfig } = require(secrets);
 
 // Tasks
@@ -51,6 +52,9 @@ const config: HardhatUserConfig = {
       chainId: 1337,
       accounts: {
         mnemonic: 'throw ripple canoe glue typical soccer repeat enhance arch dolphin warm enough',
+      },
+      forking: {
+        url: `https://polygon-mainnet.g.alchemy.com/v2/${networkConfig?.matic?.alchemyApiKey}`,
       },
     },
     rinkeby: {
