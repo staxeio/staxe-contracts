@@ -223,7 +223,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     require(token.allowance(tokenHolder, address(this)) >= price, "Insufficient allowance");
     token.transferFrom(tokenHolder, address(this), price);
     token.approve(address(escrow), price);
-    token.transferFrom(address(this), address(escrow), price);
+    token.transfer(address(escrow), price);
     escrow.buyTokens(buyer, amount, price);
   }
 }

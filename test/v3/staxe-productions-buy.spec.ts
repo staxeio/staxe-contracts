@@ -46,7 +46,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
     expect(balanceEscrow).to.be.equal(price[1]);
   });
 
-  xit('buys tokens with target token', async () => {
+  it('buys tokens with target token', async () => {
     // given
     const id = await createAndApproveProduction(
       factory.connect(organizer),
