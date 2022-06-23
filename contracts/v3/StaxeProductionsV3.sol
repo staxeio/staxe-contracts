@@ -221,8 +221,9 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     require(amount <= escrow.getTokensAvailable(), "Cannot buy more than available");
     (IERC20 token, uint256 price) = escrow.getTokenPrice(amount, buyer);
     require(token.allowance(tokenHolder, address(this)) >= price, "Insufficient allowance");
-    token.transfer(address(this), price);
-    token.transfer(address(escrow), price);
+    token.transferFrom(tokenHolder, address(this), price);
+    token.approve(address(escrow), price);
+    token.transferFrom(address(this), address(escrow), price);
     escrow.buyTokens(buyer, amount, price);
   }
 }
