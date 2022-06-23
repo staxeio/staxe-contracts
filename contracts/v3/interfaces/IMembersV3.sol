@@ -8,4 +8,6 @@ interface IMembersV3 {
   function isApprover(address sender) external view returns (bool);
 
   function isInvestor(address sender) external view returns (bool);
+
+  function isOrganizerDelegate(address sender, address organizer) external view returns (bool);
 }

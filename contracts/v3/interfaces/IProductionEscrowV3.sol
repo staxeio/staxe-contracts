@@ -29,7 +29,11 @@ interface IProductionEscrowV3 {
 
   function getProductionData() external view returns (ProductionData memory);
 
+  function getTokensAvailable() external view returns (uint256);
+
   function getTokenPrice(uint256 amount, address buyer) external view returns (IERC20, uint256);
+
+  function approve() external;
 
   function buyTokens(
     address buyer,

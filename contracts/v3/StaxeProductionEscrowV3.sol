@@ -23,10 +23,19 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     tokenPrice = _tokenPrice;
   }
 
+  modifier hasState(ProductionState state) {
+    require(productionData.state == state, "Not in required state");
+    _;
+  }
+
   // --- IProductionEscrowV3 functions ---
 
   function getProductionData() external view override returns (ProductionData memory) {
     return productionData;
+  }
+
+  function getTokensAvailable() external view returns (uint256) {
+    return productionData.totalSupply - productionData.soldCounter;
   }
 
   function getTokenPrice(uint256 amount, address) external view override returns (IERC20, uint256) {
@@ -34,14 +43,21 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return (productionData.currency, amount * tokenPrice);
   }
 
+  function approve() external onlyOwner {
+    productionData.state = ProductionState.OPEN;
+  }
+
   function buyTokens(
     address buyer,
     uint256 amount,
     uint256 price
-  ) external override onlyOwner {
+  ) external override hasState(ProductionState.OPEN) onlyOwner {
     require(amount <= productionData.totalSupply - productionData.soldCounter);
     raisedBalance += price;
     tokenPurchased[buyer] += amount;
+    // raise event
+    productionData.soldCounter += amount;
+    tokenContract.safeTransferFrom(address(this), buyer, productionData.id, amount, "");
   }
 
   function redeemProceeds(address holder, address receiver) external override {}

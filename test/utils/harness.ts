@@ -4,6 +4,7 @@ import { ethers, deployments } from 'hardhat';
 import deploymentData from '../../deployments/deployments-v3.json';
 
 import {
+  ERC20,
   StaxeMembersV3,
   StaxeProductionEscrowV3,
   StaxeProductionsFactoryV3,
@@ -50,6 +51,15 @@ export const harness = async () => {
   };
 };
 
+export type ProductionData = {
+  totalSupply: number;
+  tokenPrice: string;
+  perksReachedWithTokens: number[];
+  currency: string;
+  maxTokensUnknownBuyer: number;
+  dataHash: string;
+};
+
 export const newProduction = (
   totalSupply: number,
   tokenPrice: bigint,
@@ -60,18 +70,39 @@ export const newProduction = (
 ) => {
   return {
     totalSupply,
-    tokenPrice,
+    tokenPrice: tokenPrice + '',
     perksReachedWithTokens,
     currency,
     maxTokensUnknownBuyer,
     dataHash,
-  };
+  } as ProductionData;
+};
+
+export const createProduction = async (factory: StaxeProductionsFactoryV3, data: ProductionData) => {
+  const tx = await factory.createProduction(data);
+  return await productionId(tx);
+};
+
+export const createAndApproveProduction = async (
+  factory: StaxeProductionsFactoryV3,
+  data: ProductionData,
+  production: StaxeProductionsV3
+) => {
+  const tx = await factory.createProduction(data);
+  const id = await productionId(tx);
+  production.approve(id);
+  return id;
 };
 
 export const attachEscrow = async (productions: StaxeProductionsV3, id: number) => {
   const escrowFactory = await ethers.getContractFactory('StaxeProductionEscrowV3');
   const escrow = (await productions.getProduction(id)).escrow;
   return escrowFactory.attach(escrow) as StaxeProductionEscrowV3;
+};
+
+export const attachToken = async (address: string) => {
+  const Token = await ethers.getContractFactory('ERC20');
+  return Token.attach(address) as ERC20;
 };
 
 export const productionId = async (tx: ContractTransaction): Promise<number> => {

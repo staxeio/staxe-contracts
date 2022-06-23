@@ -38,6 +38,10 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
     return hasRole(INVESTOR_ROLE, sender);
   }
 
+  function isOrganizerDelegate(address sender, address organizer) external view override returns (bool) {
+    return hasRole(ORGANIZER_ROLE, organizer) && (sender == organizer || organizerDelegate[sender] == organizer);
+  }
+
   function addDelegate(address delegate) external onlyRole(ORGANIZER_ROLE) {
     require(organizerDelegate[delegate] == address(0), "Delegate already added");
     organizerDelegate[delegate] = _msgSender();

@@ -23,8 +23,6 @@ export const WETH = (chain: number) => {
       return '0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889'; // mumbai
     case 1337:
       return '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'; // hardhat -> matic
-    default:
-      throw Error(`Unknown chain ${chain}`);
   }
 };
 
@@ -40,8 +38,10 @@ export const DAI = (chain: number) => {
       return '0x6B175474E89094C44Da98b954EedeAC495271d0F'; // goerli
     case 42:
       return '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa'; // kovan
-    default:
-      throw Error(`Unknown chain ${chain}`);
+    case 137:
+      return '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'; // matic
+    case 1337:
+      return '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'; // hardhat -> matic
   }
 };
 
@@ -71,7 +71,27 @@ export const USDT = (chain: number) => {
       return '0xf7f730ffaec85455e3ba44f488c2bd2a741953b3'; // mumbai
     case 1337:
       return '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'; // hardhat -> matic
-    default:
-      throw Error(`Unknown chain ${chain}`);
+  }
+};
+
+export const jEUR = (chain: number) => {
+  switch (chain) {
+    case 1:
+      return '0x0f17bc9a994b87b5225cfb6a2cd4d667adb4f20b'; // main
+    case 137:
+      return '0x4e3Decbb3645551B8A19f0eA1678079FCB33fB4c'; // matic
+    case 1337:
+      return '0x4e3Decbb3645551B8A19f0eA1678079FCB33fB4c'; // hardhat -> matic
+  }
+};
+
+export const jCHF = (chain: number) => {
+  switch (chain) {
+    case 1:
+      return '0x53dfEa0A8CC2A2A2e425E1C174Bc162999723ea0'; // main
+    case 137:
+      return '0xbD1463F02f61676d53fd183C2B19282BFF93D099'; // matic
+    case 1337:
+      return '0xbD1463F02f61676d53fd183C2B19282BFF93D099'; // hardhat -> matic
   }
 };

@@ -12,4 +12,12 @@ interface IProductionsV3 {
     address creator,
     uint256 totalAmount
   ) external returns (uint256 id);
+
+  function getTokenPrice(uint256 id, uint256 amount) external view returns (IERC20, uint256);
+
+  function getTokenPriceFor(
+    uint256 id,
+    uint256 amount,
+    address buyer
+  ) external view returns (IERC20, uint256);
 }

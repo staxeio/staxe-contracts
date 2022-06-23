@@ -5,7 +5,7 @@ import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
 
 import deployments from '../deployments/deployments-v3.json';
-import { WETH, USDT } from '../utils/swap';
+import { WETH, USDT, DAI } from '../utils/swap';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [owner, treasury] = await ethers.getSigners();
@@ -16,6 +16,8 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(`Deploying to chainId=${chainId} with treasury=${treasuryByChainId}`);
 
   const wethAddress = WETH(chainId);
+  const usdtAddress = USDT(chainId);
+  const daiAddress = DAI(chainId);
 
   // -------------------------------------- CONTRACT DEPLOYMENT --------------------------------------
 
@@ -33,10 +35,14 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // ----- Productions
   const Productions = await ethers.getContractFactory('StaxeProductionsV3');
-  const productions = (await upgrades.deployProxy(Productions, [token.address, wethAddress, treasuryByChainId], {
-    constructorArgs: [contract?.forwarder],
-    unsafeAllow: ['constructor'],
-  })) as StaxeProductionsV3;
+  const productions = (await upgrades.deployProxy(
+    Productions,
+    [token.address, members.address, wethAddress, treasuryByChainId],
+    {
+      constructorArgs: [contract?.forwarder],
+      unsafeAllow: ['constructor'],
+    }
+  )) as StaxeProductionsV3;
   await productions.deployed();
   console.log(
     `StaxeProductionsV3 deployed to ${productions.address} with treasury=${treasuryByChainId}, forwarder=${contract?.forwarder}`
@@ -55,7 +61,8 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Production
   await productions.addTrustedEscrowFactory(factory.address);
-  await productions.addTrustedErc20Coin(USDT(chainId));
+  if (usdtAddress) await productions.addTrustedErc20Coin(usdtAddress);
+  if (daiAddress) await productions.addTrustedErc20Coin(daiAddress);
 
   // -------------------------------------- LOG RESULTS --------------------------------------
 
