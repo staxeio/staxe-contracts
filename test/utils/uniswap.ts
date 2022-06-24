@@ -5,7 +5,6 @@ import { abi as QuoterABI } from '@uniswap/v3-periphery/artifacts/contracts/lens
 import { abi as SwapperABI } from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json';
 import { WETH } from '../../utils/swap';
 import { IWETH__factory } from '../../typechain';
-import { attachToken } from './harness';
 
 export const UNISWAP_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
 export const UNISWAP_QUOTER = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
@@ -38,6 +37,4 @@ export const buyToken = async (
   await wrapper.deposit({ value: price });
   await wrapper.connect(recipient).approve(UNISWAP_ROUTER, price);
   await router.connect(recipient).exactOutputSingle(params);
-  const tokenContract = await attachToken(token);
-  console.log('Bought tokens for purchase:', (await tokenContract.callStatic.balanceOf(recipient.address)).toBigInt());
 };

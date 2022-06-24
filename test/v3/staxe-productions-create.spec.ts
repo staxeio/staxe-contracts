@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
-import { harness, newProduction } from '../utils/harness';
+import { createProduction, harness, newProduction } from '../utils/harness';
+import { USDT } from '../../utils/swap';
+import { BigNumber } from 'ethers';
 
 describe('StaxeProductionsV3: create productions', function () {
   // contracts
@@ -33,6 +35,43 @@ describe('StaxeProductionsV3: create productions', function () {
       .to.emit(factory, 'ProductionCreated')
       .withArgs(1, organizer.address, production.totalSupply, escrowAddress);
     expect(await token.balanceOf(escrowAddress, 1)).to.equal(production.totalSupply);
+  });
+
+  it('creates a new production with perks', async function () {
+    // given
+    const data = newProduction(
+      100,
+      1n * 10n ** 18n,
+      [
+        { total: 10, minTokensRequired: 3 },
+        { total: 5, minTokensRequired: 5 },
+        { total: 1, minTokensRequired: 10 },
+      ],
+      10,
+      USDT(1337) as string,
+      'hash'
+    );
+
+    // when
+    const id = await createProduction(factory.connect(organizer), data);
+
+    // then
+    const created = await productions.getProduction(id);
+    expect(created.id).not.to.be.undefined;
+    expect(created.data.id).to.be.equal(created.id);
+    expect(created.data.totalSupply).to.be.equal(data.totalSupply);
+    expect(created.data.creator).to.be.equal(organizer.address);
+    expect(created.data.soldCounter).to.be.equal(0);
+    expect(created.data.maxTokensUnknownBuyer).to.be.equal(data.maxTokensUnknownBuyer);
+    expect(created.data.currency).to.be.equal(data.currency);
+    expect(created.data.state).to.be.equal(1);
+    expect(created.data.dataHash).to.be.equal(data.dataHash);
+    expect(created.perks.length).to.be.equal(3);
+    console.log(created.perks);
+    expect(created.perks[0].id).to.be.equal(1);
+    expect(created.perks[0].total).to.be.equal(10);
+    expect(created.perks[0].claimed).to.be.equal(0);
+    expect(created.perks[0].minTokensRequired).to.be.equal(BigNumber.from(3));
   });
 
   it('does reject a new production for non-organizer', async function () {

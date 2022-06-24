@@ -11,6 +11,7 @@ import "./interfaces/IProductionEscrowV3.sol";
 contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
   IERC1155 private tokenContract;
   ProductionData public productionData;
+  Perk[] public perks;
   uint256 public tokenPrice;
   mapping(address => uint256) public tokenPurchased;
 
@@ -18,8 +19,15 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   uint256 public raisedBalance;
   uint256 public availableFunds;
 
-  constructor(ProductionData memory _productionData, uint256 _tokenPrice) Ownable() {
+  constructor(
+    ProductionData memory _productionData,
+    Perk[] memory _perks,
+    uint256 _tokenPrice
+  ) Ownable() {
     productionData = _productionData;
+    for (uint16 i = 0; i < _perks.length; i++) {
+      perks.push(_perks[i]);
+    }
     tokenPrice = _tokenPrice;
   }
 
@@ -32,6 +40,10 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
 
   function getProductionData() external view override returns (ProductionData memory) {
     return productionData;
+  }
+
+  function getProductionDataWithPerks() external view override returns (ProductionData memory, Perk[] memory) {
+    return (productionData, perks);
   }
 
   function getTokensAvailable() external view returns (uint256) {

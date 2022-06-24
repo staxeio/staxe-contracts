@@ -25,17 +25,6 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
   using CountersUpgradeable for CountersUpgradeable.Counter;
   using AddressUpgradeable for address payable;
 
-  struct Escrow {
-    uint256 id;
-    IProductionEscrowV3 escrow;
-  }
-
-  struct Production {
-    uint256 id;
-    IProductionEscrowV3.ProductionData data;
-    IProductionEscrowV3 escrow;
-  }
-
   // ---------- State ----------
 
   CountersUpgradeable.Counter private tokenIds;
@@ -78,7 +67,10 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
 
   function getProduction(uint256 id) external view returns (Production memory) {
     require(productionEscrows[id].id != 0, "Unknown production");
-    return Production(id, productionEscrows[id].escrow.getProductionData(), productionEscrows[id].escrow);
+    (IProductionEscrowV3.ProductionData memory data, IProductionEscrowV3.Perk[] memory perks) = productionEscrows[id]
+      .escrow
+      .getProductionDataWithPerks();
+    return Production(id, data, perks, productionEscrows[id].escrow);
   }
 
   function getTokenPrice(uint256 id, uint256 amount) external view override returns (IERC20, uint256) {
@@ -222,7 +214,6 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     (IERC20 token, uint256 price) = escrow.getTokenPrice(amount, buyer);
     require(token.allowance(tokenHolder, address(this)) >= price, "Insufficient allowance");
     token.transferFrom(tokenHolder, address(this), price);
-    token.approve(address(escrow), price);
     token.transfer(address(escrow), price);
     escrow.buyTokens(buyer, amount, price);
   }

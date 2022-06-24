@@ -4,7 +4,7 @@
       "chainId": 1337,
       "name": "hardhat",
       "treasury": "0xf66342abe568291a35Fd80Fe8B33162341e66adD",
-      "forwarder": "0x0000000000000000000000000000000000000000",
+      "forwarder": "0x47d99A63D7135E30b626209FEeabB91cF464A905",
       "token": "0xe684a83D5F4f40505918E6d5e4F98aF70157A299",
       "members": "0xA6e372d3f2225BA680CB4AC53E5c72A6342c332e",
       "productions": "0xf923e97d164eB2Ae8ce94263527909430D0E9463",

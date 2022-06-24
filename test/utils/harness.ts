@@ -1,4 +1,4 @@
-import { ContractTransaction } from 'ethers';
+import { BigNumber, ContractTransaction } from 'ethers';
 import { ethers, deployments } from 'hardhat';
 
 import deploymentData from '../../deployments/deployments-v3.json';
@@ -54,26 +54,31 @@ export const harness = async () => {
 export type ProductionData = {
   totalSupply: number;
   tokenPrice: string;
-  perksReachedWithTokens: number[];
   currency: string;
   maxTokensUnknownBuyer: number;
+  perks: Perk[];
   dataHash: string;
+};
+
+export type Perk = {
+  total: number;
+  minTokensRequired: number;
 };
 
 export const newProduction = (
   totalSupply: number,
   tokenPrice: bigint,
+  perks: Perk[] = [],
   maxTokensUnknownBuyer = 0,
-  perksReachedWithTokens = [] as number[],
   currency = USDT(1337),
   dataHash = ''
-) => {
+): ProductionData => {
   return {
     totalSupply,
     tokenPrice: tokenPrice + '',
-    perksReachedWithTokens,
     currency,
     maxTokensUnknownBuyer,
+    perks,
     dataHash,
   } as ProductionData;
 };
@@ -85,12 +90,12 @@ export const createProduction = async (factory: StaxeProductionsFactoryV3, data:
 
 export const createAndApproveProduction = async (
   factory: StaxeProductionsFactoryV3,
-  data: ProductionData,
-  production: StaxeProductionsV3
+  production: StaxeProductionsV3,
+  data: ProductionData
 ) => {
   const tx = await factory.createProduction(data);
   const id = await productionId(tx);
-  production.approve(id);
+  await production.approve(id);
   return id;
 };
 
