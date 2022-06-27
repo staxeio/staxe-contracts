@@ -119,23 +119,19 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
   }
 
   function approve(uint256 id) external validProduction(id) {
-    require(members.isApprover(_msgSender()));
-    productionEscrows[id].escrow.approve();
+    productionEscrows[id].escrow.approve(_msgSender());
   }
 
   function decline(uint256 id) external validProduction(id) {
-    require(members.isApprover(_msgSender()));
-    productionEscrows[id].escrow.decline();
+    productionEscrows[id].escrow.decline(_msgSender());
   }
 
   function finishCrowdsale(uint256 id) external validProduction(id) {
-    require(members.isOrganizer(_msgSender()));
-    productionEscrows[id].escrow.finish();
+    productionEscrows[id].escrow.finish(_msgSender());
   }
 
   function close(uint256 id) external validProduction(id) {
-    require(members.isOrganizer(_msgSender()));
-    productionEscrows[id].escrow.close();
+    productionEscrows[id].escrow.close(_msgSender());
   }
 
   // ---- Buy Tokens ----
@@ -170,9 +166,11 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     _buyWithTransfer(id, amount, _msgSender(), buyer);
   }
 
-  function proceedsToTreasury(uint256 id, address owner) external {}
+  function transferProceeds(uint256 id, address owner) external validProduction(id) {}
 
-  function finishProduction(uint256 id) external {}
+  function transferFunding(uint256 id, address owner) external validProduction(id) {}
+
+  function finishProduction(uint256 id) external validProduction(id) {}
 
   // ---- Utilities ----
 

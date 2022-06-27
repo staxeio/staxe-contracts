@@ -54,6 +54,7 @@ const config: HardhatUserConfig = {
         mnemonic: 'throw ripple canoe glue typical soccer repeat enhance arch dolphin warm enough',
       },
       forking: {
+        blockNumber: 30050000,
         url: `https://polygon-mainnet.g.alchemy.com/v2/${networkConfig?.matic?.alchemyApiKey}`,
       },
     },

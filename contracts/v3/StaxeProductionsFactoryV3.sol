@@ -61,9 +61,11 @@ contract StaxeProductionsFactoryV3 is Ownable {
       soldCounter: 0,
       currency: IERC20(data.currency),
       state: IProductionEscrowV3.ProductionState.CREATED,
-      dataHash: data.dataHash
+      dataHash: data.dataHash,
+      crowdsaleEndDate: 0,
+      productionEndDate: 0
     });
-    StaxeProductionEscrowV3 escrow = new StaxeProductionEscrowV3(productionData, perks, data.tokenPrice);
+    StaxeProductionEscrowV3 escrow = new StaxeProductionEscrowV3(productionData, perks, data.tokenPrice, members);
     escrow.transferOwnership(address(productions));
     uint256 id = productions.mintProduction(escrow, msg.sender, data.totalSupply);
     emit ProductionCreated(id, msg.sender, data.totalSupply, address(escrow));

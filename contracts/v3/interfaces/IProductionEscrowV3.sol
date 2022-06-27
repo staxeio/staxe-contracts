@@ -31,6 +31,8 @@ interface IProductionEscrowV3 {
     IERC20 currency;
     ProductionState state;
     string dataHash;
+    uint256 crowdsaleEndDate;
+    uint256 productionEndDate;
   }
 
   function getProductionData() external view returns (ProductionData memory);
@@ -41,15 +43,15 @@ interface IProductionEscrowV3 {
 
   function getTokenPrice(uint256 amount, address buyer) external view returns (IERC20, uint256);
 
-  function approve() external;
+  function approve(address approver) external;
 
-  function decline() external;
+  function decline(address decliner) external;
 
-  function finish() external;
+  function finish(address caller) external;
 
-  function close() external;
+  function close(address caller) external;
 
-  function swipe() external;
+  function swipe(address caller) external;
 
   function buyTokens(
     address buyer,
@@ -57,7 +59,7 @@ interface IProductionEscrowV3 {
     uint256 price
   ) external;
 
-  function redeemProceeds(address holder, address receiver) external;
+  function transferProceeds(address tokenHolder) external;
 
   function transferFunding() external;
 }

@@ -56,6 +56,29 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const balanceEscrow = await (await attachToken(usdt)).balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(price[1]);
     });
+
+    it('rejects buying tokens when sending not enough native currency', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const tokensToBuy = 10;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      await expect(
+        productions
+          .connect(investor1)
+          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, { value: swapPrice - 10000n })
+      ).to.be.revertedWith('STF');
+
+      // then
+      const balance = await token.balanceOf(investor1.address, id);
+      expect(balance).to.be.equal(0);
+    });
   });
 
   /*
@@ -95,6 +118,30 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const escrow = (await productions.getProduction(id)).escrow;
       const balanceEscrow = await (await attachToken(usdt)).balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(price[1]);
+    });
+
+    it('rejects buying tokens with too low balance', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const tokensToBuy = 5;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const priceTooLow = price[1].toBigInt() - 1000n;
+      const swapPrice = await getQuote(price[0], priceTooLow, 1337);
+      await buyToken(price[0], priceTooLow, swapPrice, owner);
+
+      // when
+      await (await attachToken(price[0])).connect(investor1).approve(productions.address, priceTooLow);
+      await expect(
+        productions.connect(investor1).buyTokensWithTokens(id, investor1.address, tokensToBuy)
+      ).to.be.revertedWith('Insufficient allowance');
+
+      // then
+      const balance = await token.balanceOf(investor1.address, id);
+      expect(balance).to.be.equal(0);
     });
   });
 
@@ -145,7 +192,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // when
       await expect(
         productions.connect(approver).buyTokensWithFiat(id, investor1.address, tokensToBuy)
-      ).to.be.revertedWith('Only callable from forwarder proxy');
+      ).to.be.revertedWith('Invalid token buyer');
 
       // then
       const balance = await token.balanceOf(investor1.address, id);
