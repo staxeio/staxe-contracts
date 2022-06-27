@@ -102,6 +102,16 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     return productionEscrows[id].escrow.getTokenPrice(amount, buyer);
   }
 
+  function getTokenOwnerData(uint256 id, address tokenOwner)
+    external
+    view
+    validProduction(id)
+    validBuyer(tokenOwner)
+    returns (uint256 balance, IProductionEscrowV3.Perk[] memory perksOwned)
+  {
+    return productionEscrows[id].escrow.getTokenOwnerData(tokenOwner);
+  }
+
   // ---- Lifecycle ----
 
   function mintProduction(
@@ -139,7 +149,8 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
   function buyTokensWithCurrency(
     uint256 id,
     address buyer,
-    uint256 amount
+    uint256 amount,
+    uint16 perk
   ) external payable validProduction(id) validBuyer(buyer) {
     require(amount > 0, "Must pass amount > 0");
     require(msg.value > 0, "Must pass msg.value > 0");
@@ -147,23 +158,25 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     require(amount <= escrow.getTokensAvailable(), "Cannot buy more than available");
     (IERC20 token, uint256 price) = escrow.getTokenPrice(amount, buyer);
     _swapToTargetToken(token, price, address(escrow));
-    escrow.buyTokens(buyer, amount, price);
+    escrow.buyTokens(buyer, amount, price, perk);
   }
 
   function buyTokensWithTokens(
     uint256 id,
     address buyer,
-    uint256 amount
+    uint256 amount,
+    uint16 perk
   ) external validProduction(id) validBuyer(buyer) {
-    _buyWithTransfer(id, amount, buyer, buyer);
+    _buyWithTransfer(id, amount, buyer, buyer, perk);
   }
 
   function buyTokensWithFiat(
     uint256 id,
     address buyer,
-    uint256 amount
+    uint256 amount,
+    uint16 perk
   ) external validProduction(id) validBuyer(buyer) trustedOnly {
-    _buyWithTransfer(id, amount, _msgSender(), buyer);
+    _buyWithTransfer(id, amount, _msgSender(), buyer, perk);
   }
 
   function transferProceeds(uint256 id, address owner) external validProduction(id) {}
@@ -235,7 +248,8 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     uint256 id,
     uint256 amount,
     address tokenHolder,
-    address buyer
+    address buyer,
+    uint16 perk
   ) private {
     require(amount > 0, "Must pass amount > 0");
     IProductionEscrowV3 escrow = productionEscrows[id].escrow;
@@ -244,6 +258,6 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     require(token.allowance(tokenHolder, address(this)) >= price, "Insufficient allowance");
     token.transferFrom(tokenHolder, address(this), price);
     token.transfer(address(escrow), price);
-    escrow.buyTokens(buyer, amount, price);
+    escrow.buyTokens(buyer, amount, price, perk);
   }
 }

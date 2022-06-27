@@ -47,7 +47,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // when
       await productions
         .connect(investor1)
-        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, { value: swapPrice });
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 0, { value: swapPrice });
 
       // then
       const balance = await token.balanceOf(investor1.address, id);
@@ -72,7 +72,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await expect(
         productions
           .connect(investor1)
-          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, { value: swapPrice - 10000n })
+          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 0, { value: swapPrice - 10000n })
       ).to.be.revertedWith('STF');
 
       // then
@@ -110,7 +110,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
 
       // when
       await (await attachToken(price[0])).connect(investor1).approve(productions.address, price[1]);
-      await productions.connect(investor1).buyTokensWithTokens(id, investor1.address, tokensToBuy);
+      await productions.connect(investor1).buyTokensWithTokens(id, investor1.address, tokensToBuy, 0);
 
       // then
       const balance = await token.balanceOf(investor1.address, id);
@@ -136,7 +136,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // when
       await (await attachToken(price[0])).connect(investor1).approve(productions.address, priceTooLow);
       await expect(
-        productions.connect(investor1).buyTokensWithTokens(id, investor1.address, tokensToBuy)
+        productions.connect(investor1).buyTokensWithTokens(id, investor1.address, tokensToBuy, 0)
       ).to.be.revertedWith('Insufficient allowance');
 
       // then
@@ -167,7 +167,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
 
       // when
       await (await attachToken(price[0])).connect(owner).approve(productions.address, price[1]);
-      await productions.connect(owner).buyTokensWithFiat(id, investor1.address, tokensToBuy);
+      await productions.connect(owner).buyTokensWithFiat(id, investor1.address, tokensToBuy, 0);
 
       // then
       const balance = await token.balanceOf(investor1.address, id);
@@ -191,7 +191,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
 
       // when
       await expect(
-        productions.connect(approver).buyTokensWithFiat(id, investor1.address, tokensToBuy)
+        productions.connect(approver).buyTokensWithFiat(id, investor1.address, tokensToBuy, 0)
       ).to.be.revertedWith('Invalid token buyer');
 
       // then
@@ -200,10 +200,112 @@ describe('StaxeProductionsV3: buy tokens', () => {
     });
   });
 
-  /*
-    Test cases:
-    - Buy from non-approved forwarder
-  */
+  // --------------------------- PERKS ------------------------------
+
+  describe('Buy with perks', () => {
+    it('buys tokens with perk', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n, [
+          { minTokensRequired: 1, total: 10 },
+          { minTokensRequired: 5, total: 5 },
+          { minTokensRequired: 10, total: 1 },
+        ])
+      );
+      const tokensToBuy = 10;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 3, { value: swapPrice });
+
+      // then
+      const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);
+      expect(balance.toBigInt()).to.be.equal(10n);
+      expect(perksOwned.length).to.be.equal(1);
+      expect(perksOwned[0].id).to.be.equal(3);
+      expect(perksOwned[0].claimed).to.be.equal(1);
+      expect(perksOwned[0].minTokensRequired.toBigInt()).to.be.equal(10n);
+    });
+
+    it('buys tokens with multiple perks', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n, [
+          { minTokensRequired: 1, total: 10 },
+          { minTokensRequired: 5, total: 5 },
+          { minTokensRequired: 10, total: 1 },
+        ])
+      );
+      const tokensToBuy = 1;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy * 5);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+
+      // then
+      const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);
+      expect(balance.toBigInt()).to.be.equal(3n);
+      expect(perksOwned.length).to.be.equal(3);
+      for (let i = 0; i < perksOwned.length; i++) {
+        expect(perksOwned[i].id).to.be.equal(1);
+        expect(perksOwned[i].claimed).to.be.equal(1);
+        expect(perksOwned[i].minTokensRequired.toBigInt()).to.be.equal(1n);
+      }
+    });
+
+    xit('rejects buying when purchase not high enough', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n, [
+          { minTokensRequired: 1, total: 10 },
+          { minTokensRequired: 5, total: 5 },
+          { minTokensRequired: 10, total: 1 },
+        ])
+      );
+      const tokensToBuy = 1;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy * 5);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+
+      // then
+      const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);
+      expect(balance.toBigInt()).to.be.equal(3n);
+      expect(perksOwned.length).to.be.equal(3);
+      for (let i = 0; i < perksOwned.length; i++) {
+        expect(perksOwned[i].id).to.be.equal(1);
+        expect(perksOwned[i].claimed).to.be.equal(1);
+        expect(perksOwned[i].minTokensRequired.toBigInt()).to.be.equal(1n);
+      }
+    });
+  });
 
   // --------------------------- SECURITY CHECKS ---------------------------
 
@@ -218,7 +320,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const escrow = await attachEscrow(productions, id);
 
       // when
-      await expect(escrow.buyTokens(investor1.address, 1, 10n ** 6n)).to.be.revertedWith(
+      await expect(escrow.buyTokens(investor1.address, 1, 10n ** 6n, 0)).to.be.revertedWith(
         'Ownable: caller is not the owner'
       );
       // then
@@ -234,7 +336,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
 
       // when
       await (await attachToken(price[0])).connect(investor1).approve(productions.address, price[1]);
-      await expect(productions.connect(investor1).buyTokensWithTokens(id, investor1.address, 1)).to.be.revertedWith(
+      await expect(productions.connect(investor1).buyTokensWithTokens(id, investor1.address, 1, 0)).to.be.revertedWith(
         'Not in required state'
       );
     });

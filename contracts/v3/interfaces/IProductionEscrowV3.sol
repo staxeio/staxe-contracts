@@ -39,6 +39,8 @@ interface IProductionEscrowV3 {
 
   function getProductionDataWithPerks() external view returns (ProductionData memory, Perk[] memory);
 
+  function getTokenOwnerData(address tokenOwner) external view returns (uint256 balance, Perk[] memory perks);
+
   function getTokensAvailable() external view returns (uint256);
 
   function getTokenPrice(uint256 amount, address buyer) external view returns (IERC20, uint256);
@@ -56,7 +58,8 @@ interface IProductionEscrowV3 {
   function buyTokens(
     address buyer,
     uint256 amount,
-    uint256 price
+    uint256 price,
+    uint16 perk
   ) external;
 
   function transferProceeds(address tokenHolder) external;

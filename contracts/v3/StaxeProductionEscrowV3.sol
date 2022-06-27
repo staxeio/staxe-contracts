@@ -11,12 +11,14 @@ import "./interfaces/IProductionEscrowV3.sol";
 
 contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
   ProductionData public productionData;
-  Perk[] public perks;
   uint256 public immutable tokenPrice;
   IMembersV3 public immutable members;
 
+  Perk[] public perks;
+  mapping(uint16 => address[]) public perkOwners;
+  mapping(address => uint16[]) public perksByOwner;
+
   IERC1155 private tokenContract;
-  mapping(address => uint256) public tokenPurchased;
 
   // funds raised
   uint256 public raisedBalance;
@@ -65,6 +67,23 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return (productionData.currency, amount * tokenPrice);
   }
 
+  function getTokenOwnerData(address tokenOwner)
+    external
+    view
+    override
+    returns (uint256 balance, Perk[] memory perksOwned)
+  {
+    balance = tokenContract.balanceOf(tokenOwner, productionData.id);
+    uint16[] memory ids = perksByOwner[tokenOwner];
+    perksOwned = new Perk[](ids.length);
+    for (uint16 i = 0; i < ids.length; i++) {
+      uint16 id = ids[i];
+      Perk memory perk = _idToPerk(id);
+      perksOwned[i] = Perk({id: id, total: perk.total, claimed: 1, minTokensRequired: perk.minTokensRequired});
+    }
+    return (balance, perksOwned);
+  }
+
   function approve(address approver) external override hasState(ProductionState.CREATED) onlyOwner {
     require(members.isApprover(approver));
     productionData.state = ProductionState.OPEN;
@@ -106,11 +125,12 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   function buyTokens(
     address buyer,
     uint256 amount,
-    uint256 price
+    uint256 price,
+    uint16 perkId
   ) external override hasState(ProductionState.OPEN) onlyOwner {
     require(amount <= productionData.totalSupply - productionData.soldCounter);
+    _claimPerk(buyer, amount, perkId);
     raisedBalance += price;
-    tokenPurchased[buyer] += amount;
     // raise event
     productionData.soldCounter += amount;
     tokenContract.safeTransferFrom(address(this), buyer, productionData.id, amount, "");
@@ -155,5 +175,37 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
 
   function isCreatorOrDelegate(address caller) private view returns (bool) {
     return productionData.creator == caller || members.isOrganizerDelegate(caller, productionData.creator);
+  }
+
+  function _claimPerk(
+    address buyer,
+    uint256 tokensBought,
+    uint16 perkId
+  ) internal {
+    if (perkId == 0) {
+      return;
+    }
+    Perk memory perk;
+    for (uint16 i = 0; i < perks.length; i++) {
+      if (perks[i].id == perkId) {
+        perk = perks[i];
+        break;
+      }
+    }
+    require(perk.id != 0, "Invalid perkId");
+    require(perk.total > perk.claimed, "Perk not available");
+    require(perk.minTokensRequired <= tokensBought, "Not enough tokens to claim");
+    perk.claimed += 1;
+    perkOwners[perkId].push(buyer);
+    perksByOwner[buyer].push(perkId);
+  }
+
+  function _idToPerk(uint16 perkId) internal view returns (Perk memory result) {
+    for (uint16 i = 0; i < perks.length; i++) {
+      if (perks[i].id == perkId) {
+        result = perks[i];
+        break;
+      }
+    }
   }
 }
