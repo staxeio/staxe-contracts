@@ -43,6 +43,14 @@ interface IProductionEscrowV3 {
 
   function approve() external;
 
+  function decline() external;
+
+  function finish() external;
+
+  function close() external;
+
+  function swipe() external;
+
   function buyTokens(
     address buyer,
     uint256 amount,
@@ -50,4 +58,6 @@ interface IProductionEscrowV3 {
   ) external;
 
   function redeemProceeds(address holder, address receiver) external;
+
+  function transferFunding() external;
 }

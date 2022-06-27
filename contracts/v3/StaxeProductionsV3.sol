@@ -43,8 +43,24 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
 
   constructor(address trustedForwarder) ERC2771ContextUpgradeable(trustedForwarder) {}
 
+  // ---- Modifiers ----
+
   modifier validProduction(uint256 id) {
     require(productionEscrows[id].id != 0, "Production does not exist");
+    _;
+  }
+
+  modifier validBuyer(address buyer) {
+    require(buyer != address(0), "Buyer must be valid address");
+    require(
+      buyer == _msgSender() || isTrustedForwarder(_msgSender()) || members.isInvestor(_msgSender()),
+      "Invalid token buyer"
+    );
+    _;
+  }
+
+  modifier trustedOnly() {
+    require(isTrustedForwarder(_msgSender()), "Can only be called from trusted forwarder");
     _;
   }
 
@@ -82,8 +98,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     uint256 id,
     uint256 amount,
     address buyer
-  ) external view override validProduction(id) returns (IERC20, uint256) {
-    require(_msgSender() == buyer, "Cannot check price for other addresses");
+  ) external view override validProduction(id) validBuyer(buyer) returns (IERC20, uint256) {
     return productionEscrows[id].escrow.getTokenPrice(amount, buyer);
   }
 
@@ -108,11 +123,28 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     productionEscrows[id].escrow.approve();
   }
 
+  function decline(uint256 id) external validProduction(id) {
+    require(members.isApprover(_msgSender()));
+    productionEscrows[id].escrow.decline();
+  }
+
+  function finishCrowdsale(uint256 id) external validProduction(id) {
+    require(members.isOrganizer(_msgSender()));
+    productionEscrows[id].escrow.finish();
+  }
+
+  function close(uint256 id) external validProduction(id) {
+    require(members.isOrganizer(_msgSender()));
+    productionEscrows[id].escrow.close();
+  }
+
+  // ---- Buy Tokens ----
+
   function buyTokensWithCurrency(
     uint256 id,
     address buyer,
     uint256 amount
-  ) external payable validProduction(id) {
+  ) external payable validProduction(id) validBuyer(buyer) {
     require(amount > 0, "Must pass amount > 0");
     require(msg.value > 0, "Must pass msg.value > 0");
     IProductionEscrowV3 escrow = productionEscrows[id].escrow;
@@ -126,7 +158,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     uint256 id,
     address buyer,
     uint256 amount
-  ) external validProduction(id) {
+  ) external validProduction(id) validBuyer(buyer) {
     _buyWithTransfer(id, amount, buyer, buyer);
   }
 
@@ -134,8 +166,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     uint256 id,
     address buyer,
     uint256 amount
-  ) external validProduction(id) {
-    require(isTrustedForwarder(_msgSender()), "Only callable from forwarder proxy");
+  ) external validProduction(id) validBuyer(buyer) trustedOnly {
     _buyWithTransfer(id, amount, _msgSender(), buyer);
   }
 

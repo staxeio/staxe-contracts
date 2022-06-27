@@ -67,7 +67,6 @@ describe('StaxeProductionsV3: create productions', function () {
     expect(created.data.state).to.be.equal(1);
     expect(created.data.dataHash).to.be.equal(data.dataHash);
     expect(created.perks.length).to.be.equal(3);
-    console.log(created.perks);
     expect(created.perks[0].id).to.be.equal(1);
     expect(created.perks[0].total).to.be.equal(10);
     expect(created.perks[0].claimed).to.be.equal(0);
