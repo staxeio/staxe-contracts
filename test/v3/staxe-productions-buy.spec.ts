@@ -79,16 +79,35 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const balance = await token.balanceOf(investor1.address, id);
       expect(balance).to.be.equal(0);
     });
+
+    it('refunds Matic when sending over price', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const tokensToBuy = 3;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      await expect(
+        await productions
+          .connect(investor1)
+          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 0, { value: swapPrice * 2n })
+      ).to.changeEtherBalance(investor1, -swapPrice);
+
+      // then
+      const balance = await token.balanceOf(investor1.address, id);
+      expect(balance).to.be.equal(3);
+    });
   });
 
   /*
     Test cases:
-    - Sending not enough funds
-    - Sending too much funds (refund unused funds)
-    - requesting too many tokens
     - buy non-existing token
     - token limit for non-investor buyer
-    - Buying tokens for not-open production
     - Buying tokens for closed production
     - Verify events created
   */
@@ -261,15 +280,13 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // then
       const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);
       expect(balance.toBigInt()).to.be.equal(3n);
-      expect(perksOwned.length).to.be.equal(3);
-      for (let i = 0; i < perksOwned.length; i++) {
-        expect(perksOwned[i].id).to.be.equal(1);
-        expect(perksOwned[i].claimed).to.be.equal(1);
-        expect(perksOwned[i].minTokensRequired.toBigInt()).to.be.equal(1n);
-      }
+      expect(perksOwned.length).to.be.equal(1);
+      expect(perksOwned[0].id).to.be.equal(1);
+      expect(perksOwned[0].claimed).to.be.equal(3);
+      expect(perksOwned[0].minTokensRequired.toBigInt()).to.be.equal(1n);
     });
 
-    xit('rejects buying when purchase not high enough', async () => {
+    it('rejects buying when purchase not high enough for selected perk', async () => {
       // given
       const id = await createAndApproveProduction(
         factory.connect(organizer),
@@ -285,25 +302,54 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
 
       // when
-      await productions
-        .connect(investor1)
-        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
-      await productions
-        .connect(investor1)
-        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
-      await productions
-        .connect(investor1)
-        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+      await expect(
+        productions
+          .connect(investor1)
+          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 3, { value: swapPrice })
+      ).to.be.revertedWith('Not enough tokens to claim');
+    });
 
-      // then
-      const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);
-      expect(balance.toBigInt()).to.be.equal(3n);
-      expect(perksOwned.length).to.be.equal(3);
-      for (let i = 0; i < perksOwned.length; i++) {
-        expect(perksOwned[i].id).to.be.equal(1);
-        expect(perksOwned[i].claimed).to.be.equal(1);
-        expect(perksOwned[i].minTokensRequired.toBigInt()).to.be.equal(1n);
-      }
+    it('rejects buying with non-existing perk', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n, [
+          { minTokensRequired: 1, total: 10 },
+          { minTokensRequired: 5, total: 5 },
+          { minTokensRequired: 10, total: 1 },
+        ])
+      );
+      const tokensToBuy = 1;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy * 5);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      await expect(
+        productions
+          .connect(investor1)
+          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 5, { value: swapPrice })
+      ).to.be.revertedWith('Invalid perk');
+    });
+
+    it('rejects buying when perk sold out', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n, [{ minTokensRequired: 1, total: 1 }])
+      );
+      const tokensToBuy = 1;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy * 3);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      productions.connect(investor1).buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
+      await expect(
+        productions
+          .connect(investor1)
+          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice })
+      ).to.be.revertedWith('Perk not available');
     });
   });
 
@@ -339,6 +385,36 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await expect(productions.connect(investor1).buyTokensWithTokens(id, investor1.address, 1, 0)).to.be.revertedWith(
         'Not in required state'
       );
+    });
+
+    it('Cannot buy tokens on canceled production', async () => {
+      // given
+      const id = await createProduction(factory.connect(organizer), newProduction(100, 10n ** 6n));
+      const tokensToBuy = 2;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+      await buyToken(price[0], price[1].toBigInt(), swapPrice, investor1);
+
+      // when
+      await productions.connect(approver).decline(id);
+      await expect(productions.connect(investor1).buyTokensWithTokens(id, investor1.address, 1, 0)).to.be.revertedWith(
+        'Not in required state'
+      );
+    });
+
+    it('Cannot buy tokens for non-existing production', async () => {
+      // given
+      const id = await createProduction(factory.connect(organizer), newProduction(100, 10n ** 6n));
+      const tokensToBuy = 2;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+      await buyToken(price[0], price[1].toBigInt(), swapPrice, investor1);
+
+      // when
+      await (await attachToken(price[0])).connect(investor1).approve(productions.address, price[1]);
+      await expect(
+        productions.connect(investor1).buyTokensWithTokens(id + 1, investor1.address, 1, 0)
+      ).to.be.revertedWith('Production does not exist');
     });
   });
 });

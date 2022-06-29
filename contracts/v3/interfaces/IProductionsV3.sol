@@ -17,6 +17,8 @@ interface IProductionsV3 {
     IProductionEscrowV3.ProductionData data;
     IProductionEscrowV3.Perk[] perks;
     IProductionEscrowV3 escrow;
+    uint256 fundsRaised;
+    uint256 escrowBalance;
   }
 
   function mintProduction(

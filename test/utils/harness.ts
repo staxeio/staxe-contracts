@@ -12,6 +12,7 @@ import {
   StaxeProductionTokenV3,
 } from '../../typechain';
 import { USDT } from '../../utils/swap';
+import { getQuote } from './uniswap';
 
 export const harness = async () => {
   const [owner, organizer, approver, investor1, investor2, treasury, ...addresses] = await ethers.getSigners();
@@ -90,13 +91,26 @@ export const createProduction = async (factory: StaxeProductionsFactoryV3, data:
 
 export const createAndApproveProduction = async (
   factory: StaxeProductionsFactoryV3,
-  production: StaxeProductionsV3,
+  productions: StaxeProductionsV3,
   data: ProductionData
 ) => {
   const tx = await factory.createProduction(data);
   const id = await productionId(tx);
-  await production.approve(id);
+  await productions.approve(id);
   return id;
+};
+
+export const buyTokens = async (
+  productions: StaxeProductionsV3,
+  address: string,
+  id: number,
+  tokensToBuy: number,
+  perk = 0
+) => {
+  const price = await productions.getTokenPrice(id, tokensToBuy);
+  const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+  await productions.buyTokensWithCurrency(id, address, tokensToBuy, perk, { value: swapPrice });
+  return price[1].toBigInt();
 };
 
 export const attachEscrow = async (productions: StaxeProductionsV3, id: number) => {

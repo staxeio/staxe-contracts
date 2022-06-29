@@ -15,6 +15,7 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
 import "./interfaces/IProductionEscrowV3.sol";
 import "./interfaces/IProductionTokenV3.sol";
+import "./interfaces/IProductionTokenTrackerV3.sol";
 import "./interfaces/IProductionsV3.sol";
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IWETH.sol";
@@ -83,10 +84,21 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
 
   function getProduction(uint256 id) external view returns (Production memory) {
     require(productionEscrows[id].id != 0, "Unknown production");
-    (IProductionEscrowV3.ProductionData memory data, IProductionEscrowV3.Perk[] memory perks) = productionEscrows[id]
-      .escrow
-      .getProductionDataWithPerks();
-    return Production(id, data, perks, productionEscrows[id].escrow);
+    (
+      IProductionEscrowV3.ProductionData memory data,
+      IProductionEscrowV3.Perk[] memory perks,
+      uint256 fundsRaised
+    ) = productionEscrows[id].escrow.getProductionDataWithPerks();
+    uint256 balance = IERC20(data.currency).balanceOf(address(productionEscrows[id].escrow));
+    return
+      Production({
+        id: id,
+        data: data,
+        perks: perks,
+        escrow: productionEscrows[id].escrow,
+        fundsRaised: fundsRaised,
+        escrowBalance: balance
+      });
   }
 
   function getTokenPrice(uint256 id, uint256 amount) external view override returns (IERC20, uint256) {
@@ -124,7 +136,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     tokenIds.increment();
     id = tokenIds.current();
     emit ProductionCreated(id, creator, totalAmount, address(escrow));
-    productionToken.mintToken(address(escrow), id, totalAmount);
+    productionToken.mintToken(IProductionTokenTrackerV3(escrow), id, totalAmount);
     productionEscrows[id] = Escrow({id: id, escrow: escrow});
   }
 
@@ -181,7 +193,9 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
 
   function transferProceeds(uint256 id, address owner) external validProduction(id) {}
 
-  function transferFunding(uint256 id, address owner) external validProduction(id) {}
+  function transferFunding(uint256 id) external validProduction(id) {
+    productionEscrows[id].escrow.transferFunding(_msgSender());
+  }
 
   function finishProduction(uint256 id) external validProduction(id) {}
 

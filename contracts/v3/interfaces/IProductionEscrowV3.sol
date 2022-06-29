@@ -4,7 +4,9 @@ pragma solidity ^0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IProductionEscrowV3 {
+import "./IProductionTokenTrackerV3.sol";
+
+interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
   enum ProductionState {
     EMPTY,
     CREATED,
@@ -37,7 +39,14 @@ interface IProductionEscrowV3 {
 
   function getProductionData() external view returns (ProductionData memory);
 
-  function getProductionDataWithPerks() external view returns (ProductionData memory, Perk[] memory);
+  function getProductionDataWithPerks()
+    external
+    view
+    returns (
+      ProductionData memory,
+      Perk[] memory,
+      uint256
+    );
 
   function getTokenOwnerData(address tokenOwner) external view returns (uint256 balance, Perk[] memory perks);
 
@@ -62,7 +71,9 @@ interface IProductionEscrowV3 {
     uint16 perk
   ) external;
 
+  function depositProceeds(address caller, uint256 amount) external;
+
   function transferProceeds(address tokenHolder) external;
 
-  function transferFunding() external;
+  function transferFunding(address caller) external;
 }

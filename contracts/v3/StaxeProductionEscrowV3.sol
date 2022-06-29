@@ -5,24 +5,27 @@ pragma solidity ^0.8.15;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
 
 contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
+  using EnumerableSet for EnumerableSet.UintSet;
+
   ProductionData public productionData;
   uint256 public immutable tokenPrice;
   IMembersV3 public immutable members;
 
   Perk[] public perks;
-  mapping(uint16 => address[]) public perkOwners;
   mapping(address => uint16[]) public perksByOwner;
+  mapping(address => EnumerableSet.UintSet) private perkSetByOwner;
 
   IERC1155 private tokenContract;
 
-  // funds raised
-  uint256 public raisedBalance;
-  uint256 public availableFunds;
+  uint256 public fundsRaised;
+  uint256 public proceedsEarned;
+  mapping(address => uint256) payoutPerTokenHolder;
 
   constructor(
     ProductionData memory _productionData,
@@ -54,8 +57,17 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return productionData;
   }
 
-  function getProductionDataWithPerks() external view override returns (ProductionData memory, Perk[] memory) {
-    return (productionData, perks);
+  function getProductionDataWithPerks()
+    external
+    view
+    override
+    returns (
+      ProductionData memory,
+      Perk[] memory,
+      uint256
+    )
+  {
+    return (productionData, perks, fundsRaised);
   }
 
   function getTokensAvailable() external view hasState(ProductionState.OPEN) returns (uint256) {
@@ -75,22 +87,26 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   {
     balance = tokenContract.balanceOf(tokenOwner, productionData.id);
     uint16[] memory ids = perksByOwner[tokenOwner];
-    perksOwned = new Perk[](ids.length);
-    for (uint16 i = 0; i < ids.length; i++) {
-      uint16 id = ids[i];
-      Perk memory perk = _idToPerk(id);
-      perksOwned[i] = Perk({id: id, total: perk.total, claimed: 1, minTokensRequired: perk.minTokensRequired});
+    uint256[] memory values = EnumerableSet.values(perkSetByOwner[tokenOwner]);
+    perksOwned = new Perk[](values.length);
+    for (uint16 i = 0; i < values.length; i++) {
+      uint16 id = uint16(values[i]);
+      Perk memory perk = idToPerk(id);
+      uint16 count = countIds(id, ids);
+      perksOwned[i] = Perk({id: id, total: perk.total, claimed: count, minTokensRequired: perk.minTokensRequired});
     }
     return (balance, perksOwned);
   }
 
   function approve(address approver) external override hasState(ProductionState.CREATED) onlyOwner {
     require(members.isApprover(approver));
+    // raise event
     productionData.state = ProductionState.OPEN;
   }
 
   function decline(address decliner) external override hasState(ProductionState.CREATED) onlyOwner {
     require(members.isApprover(decliner));
+    // raise event
     productionData.state = ProductionState.DECLINED;
   }
 
@@ -102,7 +118,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
         productionData.crowdsaleEndDate >= block.timestamp,
       "Cannot be finished before date or only be creator"
     );
+    // raise event
     productionData.state = ProductionState.FINISHED;
+    swipeToCreator();
   }
 
   function close(address caller) external override hasState(ProductionState.FINISHED) onlyOwner {
@@ -117,9 +135,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   }
 
   function swipe(address caller) external override hasState(ProductionState.CLOSED) onlyOwner creatorOnly(caller) {
-    IERC20 currency = IERC20(productionData.currency);
-    uint256 balanceLeft = currency.balanceOf(address(this));
-    currency.transfer(productionData.creator, balanceLeft);
+    swipeToCreator();
   }
 
   function buyTokens(
@@ -129,18 +145,62 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     uint16 perkId
   ) external override hasState(ProductionState.OPEN) onlyOwner {
     require(amount <= productionData.totalSupply - productionData.soldCounter);
-    _claimPerk(buyer, amount, perkId);
-    raisedBalance += price;
+    claimPerk(buyer, amount, perkId);
+    fundsRaised += price;
     // raise event
     productionData.soldCounter += amount;
     tokenContract.safeTransferFrom(address(this), buyer, productionData.id, amount, "");
   }
 
-  function transferProceeds(address holder) external override onlyOwner {}
+  function depositProceeds(address caller, uint256 amount)
+    external
+    override
+    hasState(ProductionState.FINISHED)
+    creatorOnly(caller)
+    onlyOwner
+  {
+    // raise event
+    proceedsEarned += amount;
+  }
 
-  function transferFunding() external override onlyOwner {}
+  function transferProceeds(address holder) external override hasState(ProductionState.FINISHED) onlyOwner {
+    uint256 proceedsPerToken = proceedsEarned / productionData.totalSupply;
+    uint256 tokens = tokenContract.balanceOf(holder, productionData.id);
+    uint256 payout = (proceedsPerToken * tokens) - payoutPerTokenHolder[holder];
+    payoutPerTokenHolder[holder] += payout;
+    if (payout > 0) {
+      // raise event
+      IERC20(productionData.currency).transfer(holder, payout);
+    }
+  }
+
+  function transferFunding(address caller)
+    external
+    override
+    hasState(ProductionState.OPEN)
+    creatorOnly(caller)
+    onlyOwner
+  {
+    // raise event
+    swipeToCreator();
+  }
 
   // --- IERC1155Receiver functions ---
+
+  function onTokenTransfer(
+    IERC1155, /* tokenContract */
+    uint256 tokenId,
+    address currentOwner,
+    address newOwner,
+    uint256 numTokens
+  ) external override {
+    require(msg.sender == address(tokenContract), "Unknown token contract sender");
+    require(tokenId == productionData.id, "Invalid token id");
+    uint256 currentBalance = tokenContract.balanceOf(currentOwner, productionData.id);
+    uint256 payoutTransfer = (numTokens * payoutPerTokenHolder[currentOwner]) / currentBalance;
+    payoutPerTokenHolder[currentOwner] -= payoutTransfer;
+    payoutPerTokenHolder[newOwner] += payoutTransfer;
+  }
 
   function onERC1155Received(
     address, /*operator*/
@@ -173,11 +233,19 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
       interfaceID == 0x4e2312e0; // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
   }
 
+  // --- Private ---
+
+  function swipeToCreator() private returns (uint256 balanceLeft) {
+    IERC20 currency = IERC20(productionData.currency);
+    balanceLeft = currency.balanceOf(address(this));
+    currency.transfer(productionData.creator, balanceLeft);
+  }
+
   function isCreatorOrDelegate(address caller) private view returns (bool) {
     return productionData.creator == caller || members.isOrganizerDelegate(caller, productionData.creator);
   }
 
-  function _claimPerk(
+  function claimPerk(
     address buyer,
     uint256 tokensBought,
     uint16 perkId
@@ -185,26 +253,38 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     if (perkId == 0) {
       return;
     }
-    Perk memory perk;
-    for (uint16 i = 0; i < perks.length; i++) {
-      if (perks[i].id == perkId) {
-        perk = perks[i];
-        break;
-      }
-    }
-    require(perk.id != 0, "Invalid perkId");
+    uint256 index = idToPerkIndex(perkId);
+    require(index < perks.length, "Invalid perkId");
+    Perk storage perk = perks[index];
     require(perk.total > perk.claimed, "Perk not available");
     require(perk.minTokensRequired <= tokensBought, "Not enough tokens to claim");
     perk.claimed += 1;
-    perkOwners[perkId].push(buyer);
     perksByOwner[buyer].push(perkId);
+    EnumerableSet.add(perkSetByOwner[buyer], perkId);
   }
 
-  function _idToPerk(uint16 perkId) internal view returns (Perk memory result) {
+  function idToPerkIndex(uint16 perkId) private view returns (uint256) {
+    for (uint256 i = 0; i < perks.length; i++) {
+      if (perks[i].id == perkId) {
+        return i;
+      }
+    }
+    return perks.length;
+  }
+
+  function idToPerk(uint16 perkId) private view returns (Perk memory result) {
     for (uint16 i = 0; i < perks.length; i++) {
       if (perks[i].id == perkId) {
         result = perks[i];
         break;
+      }
+    }
+  }
+
+  function countIds(uint16 perkId, uint16[] memory perkIds) private pure returns (uint16 result) {
+    for (uint16 i = 0; i < perkIds.length; i++) {
+      if (perkIds[i] == perkId) {
+        result += 1;
       }
     }
   }
