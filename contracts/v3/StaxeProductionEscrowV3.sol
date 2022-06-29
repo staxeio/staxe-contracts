@@ -91,7 +91,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     perksOwned = new Perk[](values.length);
     for (uint16 i = 0; i < values.length; i++) {
       uint16 id = uint16(values[i]);
-      Perk memory perk = idToPerk(id);
+      Perk memory perk = perks[id - 1];
       uint16 count = countIds(id, ids);
       perksOwned[i] = Perk({id: id, total: perk.total, claimed: count, minTokensRequired: perk.minTokensRequired});
     }
@@ -253,32 +253,13 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     if (perkId == 0) {
       return;
     }
-    uint256 index = idToPerkIndex(perkId);
-    require(index < perks.length, "Invalid perkId");
-    Perk storage perk = perks[index];
+    require(perkId <= perks.length, "Invalid perkId");
+    Perk storage perk = perks[perkId - 1];
     require(perk.total > perk.claimed, "Perk not available");
     require(perk.minTokensRequired <= tokensBought, "Not enough tokens to claim");
     perk.claimed += 1;
     perksByOwner[buyer].push(perkId);
     EnumerableSet.add(perkSetByOwner[buyer], perkId);
-  }
-
-  function idToPerkIndex(uint16 perkId) private view returns (uint256) {
-    for (uint256 i = 0; i < perks.length; i++) {
-      if (perks[i].id == perkId) {
-        return i;
-      }
-    }
-    return perks.length;
-  }
-
-  function idToPerk(uint16 perkId) private view returns (Perk memory result) {
-    for (uint16 i = 0; i < perks.length; i++) {
-      if (perks[i].id == perkId) {
-        result = perks[i];
-        break;
-      }
-    }
   }
 
   function countIds(uint16 perkId, uint16[] memory perkIds) private pure returns (uint16 result) {
