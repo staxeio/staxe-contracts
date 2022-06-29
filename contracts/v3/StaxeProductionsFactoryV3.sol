@@ -26,6 +26,9 @@ contract StaxeProductionsFactoryV3 is Ownable {
     uint256 maxTokensUnknownBuyer;
     CreatePerk[] perks;
     string dataHash;
+    uint256 crowdsaleEndDate;
+    uint256 productionEndDate;
+    uint8 platformSharePercentage;
   }
 
   // ----- Events -----
@@ -62,8 +65,9 @@ contract StaxeProductionsFactoryV3 is Ownable {
       currency: IERC20(data.currency),
       state: IProductionEscrowV3.ProductionState.CREATED,
       dataHash: data.dataHash,
-      crowdsaleEndDate: 0,
-      productionEndDate: 0
+      crowdsaleEndDate: data.crowdsaleEndDate,
+      productionEndDate: data.productionEndDate,
+      platformSharePercentage: data.platformSharePercentage
     });
     StaxeProductionEscrowV3 escrow = new StaxeProductionEscrowV3(productionData, perks, data.tokenPrice, members);
     escrow.transferOwnership(address(productions));

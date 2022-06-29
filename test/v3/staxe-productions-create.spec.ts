@@ -50,7 +50,10 @@ describe('StaxeProductionsV3: create productions', () => {
         ],
         10,
         USDT(1337) as string,
-        'hash'
+        'hash',
+        0,
+        0,
+        10
       );
 
       // when
@@ -67,6 +70,9 @@ describe('StaxeProductionsV3: create productions', () => {
       expect(created.data.currency).to.be.equal(data.currency);
       expect(created.data.state).to.be.equal(1);
       expect(created.data.dataHash).to.be.equal(data.dataHash);
+      expect(created.data.crowdsaleEndDate).to.be.equal(data.crowdsaleEndDate);
+      expect(created.data.productionEndDate).to.be.equal(data.productionEndDate);
+      expect(created.data.platformSharePercentage).to.be.equal(data.platformSharePercentage);
       expect(created.perks.length).to.be.equal(3);
       expect(created.perks[0].id).to.be.equal(1);
       expect(created.perks[0].total).to.be.equal(10);

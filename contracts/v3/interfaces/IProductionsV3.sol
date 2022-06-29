@@ -5,7 +5,11 @@ pragma solidity ^0.8.15;
 import "./IProductionEscrowV3.sol";
 
 interface IProductionsV3 {
-  event ProductionCreated(uint256 indexed id, address indexed creator, uint256 tokenSupply, address escrow);
+  event ProductionMinted(uint256 indexed id, address indexed creator, uint256 tokenSupply, address escrow);
+  event TokenBought(uint256 indexed id, address indexed buyer, uint256 amount, uint256 price, uint16 perkClaimed);
+  event FundingClaimed(uint256 indexed id, address indexed buyer, uint256 amount, uint256 platformShare);
+  event ProceedsDeposited(uint256 indexed id, address indexed creator, uint256 amount);
+  event ProceedsClaimed(uint256 indexed id, address indexed buyer, uint256 amount);
 
   struct Escrow {
     uint256 id;

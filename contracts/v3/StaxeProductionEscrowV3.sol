@@ -10,8 +10,12 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
 
+// import "hardhat/console.sol";
+
 contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
   using EnumerableSet for EnumerableSet.UintSet;
+
+  // --- Data ---
 
   ProductionData public productionData;
   uint256 public immutable tokenPrice;
@@ -26,6 +30,8 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   uint256 public fundsRaised;
   uint256 public proceedsEarned;
   mapping(address => uint256) payoutPerTokenHolder;
+
+  // --- Functions ---
 
   constructor(
     ProductionData memory _productionData,
@@ -83,7 +89,12 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     external
     view
     override
-    returns (uint256 balance, Perk[] memory perksOwned)
+    returns (
+      uint256 balance,
+      Perk[] memory perksOwned,
+      uint256 proceedsClaimed,
+      uint256 proceedsAvailable
+    )
   {
     balance = tokenContract.balanceOf(tokenOwner, productionData.id);
     uint16[] memory ids = perksByOwner[tokenOwner];
@@ -95,22 +106,24 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
       uint16 count = countIds(id, ids);
       perksOwned[i] = Perk({id: id, total: perk.total, claimed: count, minTokensRequired: perk.minTokensRequired});
     }
-    return (balance, perksOwned);
+    proceedsClaimed = payoutPerTokenHolder[tokenOwner];
+    proceedsAvailable = ((balance * proceedsAvailable) / productionData.totalSupply) - proceedsClaimed;
+    return (balance, perksOwned, proceedsClaimed, proceedsAvailable);
   }
 
   function approve(address approver) external override hasState(ProductionState.CREATED) onlyOwner {
     require(members.isApprover(approver));
-    // raise event
+    emit StateChanged(ProductionState.CREATED, ProductionState.OPEN, approver);
     productionData.state = ProductionState.OPEN;
   }
 
   function decline(address decliner) external override hasState(ProductionState.CREATED) onlyOwner {
     require(members.isApprover(decliner));
-    // raise event
+    emit StateChanged(ProductionState.CREATED, ProductionState.DECLINED, decliner);
     productionData.state = ProductionState.DECLINED;
   }
 
-  function finish(address caller) external override hasState(ProductionState.OPEN) onlyOwner {
+  function finish(address caller, address platformTreasury) external override hasState(ProductionState.OPEN) onlyOwner {
     // if we have an end timestamp we can allow closing anyone (e.g. our relay with an autotask)
     // otherwise if no timestamp we hand this over to the production owner.
     require(
@@ -118,9 +131,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
         productionData.crowdsaleEndDate >= block.timestamp,
       "Cannot be finished before date or only be creator"
     );
-    // raise event
+    emit StateChanged(ProductionState.OPEN, ProductionState.FINISHED, caller);
     productionData.state = ProductionState.FINISHED;
-    swipeToCreator();
+    swipeToCreator(caller, platformTreasury);
   }
 
   function close(address caller) external override hasState(ProductionState.FINISHED) onlyOwner {
@@ -131,11 +144,18 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
         productionData.productionEndDate >= block.timestamp,
       "Cannot be closed before date or only be creator"
     );
+    emit StateChanged(ProductionState.FINISHED, ProductionState.CLOSED, caller);
     productionData.state = ProductionState.CLOSED;
   }
 
-  function swipe(address caller) external override hasState(ProductionState.CLOSED) onlyOwner creatorOnly(caller) {
-    swipeToCreator();
+  function swipe(address caller, address platformTreasury)
+    external
+    override
+    hasState(ProductionState.CLOSED)
+    onlyOwner
+    creatorOnly(caller)
+  {
+    swipeToCreator(caller, platformTreasury);
   }
 
   function buyTokens(
@@ -147,7 +167,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     require(amount <= productionData.totalSupply - productionData.soldCounter);
     claimPerk(buyer, amount, perkId);
     fundsRaised += price;
-    // raise event
+    emit TokenBought(buyer, amount, price, perkId);
     productionData.soldCounter += amount;
     tokenContract.safeTransferFrom(address(this), buyer, productionData.id, amount, "");
   }
@@ -159,33 +179,39 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     creatorOnly(caller)
     onlyOwner
   {
-    // raise event
+    emit ProceedsDeposited(amount, caller);
     proceedsEarned += amount;
   }
 
-  function transferProceeds(address holder) external override hasState(ProductionState.FINISHED) onlyOwner {
+  function transferProceeds(address holder)
+    external
+    override
+    hasState(ProductionState.FINISHED)
+    onlyOwner
+    returns (uint256 payout)
+  {
     uint256 proceedsPerToken = proceedsEarned / productionData.totalSupply;
     uint256 tokens = tokenContract.balanceOf(holder, productionData.id);
-    uint256 payout = (proceedsPerToken * tokens) - payoutPerTokenHolder[holder];
+    payout = (proceedsPerToken * tokens) - payoutPerTokenHolder[holder];
     payoutPerTokenHolder[holder] += payout;
     if (payout > 0) {
-      // raise event
+      emit ProceedsClaimed(payout, holder);
       IERC20(productionData.currency).transfer(holder, payout);
     }
   }
 
-  function transferFunding(address caller)
+  function transferFunding(address caller, address platformTreasury)
     external
     override
     hasState(ProductionState.OPEN)
     creatorOnly(caller)
     onlyOwner
+    returns (uint256 amount, uint256 platformShare)
   {
-    // raise event
-    swipeToCreator();
+    (amount, platformShare) = swipeToCreator(caller, platformTreasury);
   }
 
-  // --- IERC1155Receiver functions ---
+  // --- Callback functions ---
 
   function onTokenTransfer(
     IERC1155, /* tokenContract */
@@ -235,10 +261,17 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
 
   // --- Private ---
 
-  function swipeToCreator() private returns (uint256 balanceLeft) {
+  function swipeToCreator(address caller, address platformTreasury)
+    private
+    returns (uint256 balanceLeft, uint256 platformShare)
+  {
     IERC20 currency = IERC20(productionData.currency);
-    balanceLeft = currency.balanceOf(address(this));
+    uint256 balance = currency.balanceOf(address(this));
+    platformShare = (balance * productionData.platformSharePercentage) / 100;
+    balanceLeft = balance - platformShare;
+    emit FundingClaimed(balanceLeft, platformShare, caller);
     currency.transfer(productionData.creator, balanceLeft);
+    currency.transfer(platformTreasury, platformShare);
   }
 
   function isCreatorOrDelegate(address caller) private view returns (bool) {

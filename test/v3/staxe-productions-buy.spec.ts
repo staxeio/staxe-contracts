@@ -278,12 +278,17 @@ describe('StaxeProductionsV3: buy tokens', () => {
         .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 1, { value: swapPrice });
 
       // then
-      const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);
+      const { balance, perksOwned, proceedsClaimed, proceedsAvailable } = await productions.getTokenOwnerData(
+        id,
+        investor1.address
+      );
       expect(balance.toBigInt()).to.be.equal(3n);
       expect(perksOwned.length).to.be.equal(1);
       expect(perksOwned[0].id).to.be.equal(1);
       expect(perksOwned[0].claimed).to.be.equal(3);
       expect(perksOwned[0].minTokensRequired.toBigInt()).to.be.equal(1n);
+      expect(proceedsClaimed).to.be.equal(0);
+      expect(proceedsAvailable).to.be.equal(0);
     });
 
     it('rejects buying when purchase not high enough for selected perk', async () => {

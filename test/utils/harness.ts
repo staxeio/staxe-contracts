@@ -59,6 +59,9 @@ export type ProductionData = {
   maxTokensUnknownBuyer: number;
   perks: Perk[];
   dataHash: string;
+  crowdsaleEndDate: number;
+  productionEndDate: number;
+  platformSharePercentage: number;
 };
 
 export type Perk = {
@@ -72,7 +75,10 @@ export const newProduction = (
   perks: Perk[] = [],
   maxTokensUnknownBuyer = 0,
   currency = USDT(1337),
-  dataHash = ''
+  dataHash = '',
+  crowdsaleEndDate = 0,
+  productionEndDate = 0,
+  platformSharePercentage = 10
 ): ProductionData => {
   return {
     totalSupply,
@@ -81,6 +87,9 @@ export const newProduction = (
     maxTokensUnknownBuyer,
     perks,
     dataHash,
+    crowdsaleEndDate,
+    productionEndDate,
+    platformSharePercentage,
   } as ProductionData;
 };
 

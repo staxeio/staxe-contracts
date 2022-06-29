@@ -10,6 +10,7 @@ describe('StaxeProductionsV3: retrieve funding', () => {
   let factory: StaxeProductionsFactoryV3;
 
   // actors
+  let owner: SignerWithAddress;
   let approver: SignerWithAddress;
   let organizer: SignerWithAddress;
   let investor1: SignerWithAddress;
@@ -18,7 +19,7 @@ describe('StaxeProductionsV3: retrieve funding', () => {
   const usdt = USDT(1337) as string;
 
   beforeEach(async () => {
-    ({ productions, factory, approver, organizer, investor1, investor2 } = await harness());
+    ({ productions, factory, owner, approver, organizer, investor1, investor2 } = await harness());
   });
 
   // --------------------------- Retrive funds ---------------------------
@@ -43,7 +44,9 @@ describe('StaxeProductionsV3: retrieve funding', () => {
       const balanceEscrow = await currency.balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(0);
       const balanceOrganizer = await currency.balanceOf(organizer.address);
-      expect(balanceOrganizer).to.be.equal(funds1 + funds2);
+      expect(balanceOrganizer).to.be.equal(((funds1 + funds2) * 90n) / 100n);
+      const balanceOwner = await currency.balanceOf(owner.address);
+      expect(balanceOwner).to.be.equal(((funds1 + funds2) * 10n) / 100n);
     });
 
     it('automatically transfers funding when finishing crowdsale', async () => {
@@ -64,7 +67,9 @@ describe('StaxeProductionsV3: retrieve funding', () => {
       const balanceEscrow = await currency.balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(0);
       const balanceOrganizer = await currency.balanceOf(organizer.address);
-      expect(balanceOrganizer).to.be.equal(funds);
+      expect(balanceOrganizer).to.be.equal((funds * 90n) / 100n);
+      const balanceOwner = await currency.balanceOf(owner.address);
+      expect(balanceOwner).to.be.equal((funds * 10n) / 100n);
     });
 
     it('rejects transferring funds after finishing crowdsale', async () => {

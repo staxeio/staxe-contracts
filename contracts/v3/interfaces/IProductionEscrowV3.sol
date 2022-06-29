@@ -35,7 +35,18 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
     string dataHash;
     uint256 crowdsaleEndDate;
     uint256 productionEndDate;
+    uint8 platformSharePercentage;
   }
+
+  // --- Events ---
+
+  event StateChanged(ProductionState from, ProductionState to, address by);
+  event TokenBought(address buyer, uint256 amount, uint256 price, uint16 perkClaimed);
+  event FundingClaimed(uint256 amount, uint256 platformShare, address by);
+  event ProceedsDeposited(uint256 amount, address by);
+  event ProceedsClaimed(uint256 amount, address by);
+
+  // --- Functions ---
 
   function getProductionData() external view returns (ProductionData memory);
 
@@ -48,7 +59,15 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
       uint256
     );
 
-  function getTokenOwnerData(address tokenOwner) external view returns (uint256 balance, Perk[] memory perks);
+  function getTokenOwnerData(address tokenOwner)
+    external
+    view
+    returns (
+      uint256 balance,
+      Perk[] memory perks,
+      uint256 proceedsClaimed,
+      uint256 proceedsAvailable
+    );
 
   function getTokensAvailable() external view returns (uint256);
 
@@ -58,11 +77,11 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
 
   function decline(address decliner) external;
 
-  function finish(address caller) external;
+  function finish(address caller, address platformTreasury) external;
 
   function close(address caller) external;
 
-  function swipe(address caller) external;
+  function swipe(address caller, address platformTreasury) external;
 
   function buyTokens(
     address buyer,
@@ -73,7 +92,9 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
 
   function depositProceeds(address caller, uint256 amount) external;
 
-  function transferProceeds(address tokenHolder) external;
+  function transferProceeds(address tokenHolder) external returns (uint256 amount);
 
-  function transferFunding(address caller) external;
+  function transferFunding(address caller, address platformTreasury)
+    external
+    returns (uint256 amount, uint256 platformShare);
 }
