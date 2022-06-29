@@ -1,5 +1,6 @@
-import { BigNumber, ContractTransaction } from 'ethers';
+import { ContractTransaction } from 'ethers';
 import { ethers, deployments } from 'hardhat';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
 import deploymentData from '../../deployments/deployments-v3.json';
 
@@ -12,7 +13,7 @@ import {
   StaxeProductionTokenV3,
 } from '../../typechain';
 import { USDT } from '../../utils/swap';
-import { getQuote } from './uniswap';
+import { buyToken, getQuote } from './uniswap';
 
 export const harness = async () => {
   const [owner, organizer, approver, investor1, investor2, treasury, ...addresses] = await ethers.getSigners();
@@ -107,6 +108,18 @@ export const createAndApproveProduction = async (
   const id = await productionId(tx);
   await productions.approve(id);
   return id;
+};
+
+export const buyUsdt = async (amount: bigint, recipient: SignerWithAddress) => {
+  const usdt = USDT(1337) as string;
+  const swapPrice = await getQuote(usdt, amount, 1337);
+  await buyToken(usdt, amount, swapPrice, recipient);
+};
+
+export const buyUsdtAndApprove = async (amount: bigint, recipient: SignerWithAddress, approveTo: string) => {
+  await buyUsdt(amount, recipient);
+  const usdt = USDT(1337) as string;
+  (await attachToken(usdt)).connect(recipient).approve(approveTo, amount);
 };
 
 export const buyTokens = async (

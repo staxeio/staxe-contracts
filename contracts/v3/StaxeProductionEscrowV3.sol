@@ -30,6 +30,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   uint256 public fundsRaised;
   uint256 public proceedsEarned;
   mapping(address => uint256) payoutPerTokenHolder;
+  mapping(address => uint256) private payoutPerTokenTracking;
 
   // --- Functions ---
 
@@ -107,7 +108,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
       perksOwned[i] = Perk({id: id, total: perk.total, claimed: count, minTokensRequired: perk.minTokensRequired});
     }
     proceedsClaimed = payoutPerTokenHolder[tokenOwner];
-    proceedsAvailable = ((balance * proceedsAvailable) / productionData.totalSupply) - proceedsClaimed;
+    proceedsAvailable = ((balance * proceedsEarned) / productionData.totalSupply) - payoutPerTokenTracking[tokenOwner];
     return (balance, perksOwned, proceedsClaimed, proceedsAvailable);
   }
 
@@ -129,7 +130,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     require(
       (productionData.crowdsaleEndDate == 0 && isCreatorOrDelegate(caller)) ||
         productionData.crowdsaleEndDate >= block.timestamp,
-      "Cannot be finished before date or only be creator"
+      "Cannot be finished before date or only by creator"
     );
     emit StateChanged(ProductionState.OPEN, ProductionState.FINISHED, caller);
     productionData.state = ProductionState.FINISHED;
@@ -142,7 +143,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     require(
       (productionData.productionEndDate == 0 && isCreatorOrDelegate(caller)) ||
         productionData.productionEndDate >= block.timestamp,
-      "Cannot be closed before date or only be creator"
+      "Cannot be closed before date or only by creator"
     );
     emit StateChanged(ProductionState.FINISHED, ProductionState.CLOSED, caller);
     productionData.state = ProductionState.CLOSED;
@@ -192,8 +193,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   {
     uint256 proceedsPerToken = proceedsEarned / productionData.totalSupply;
     uint256 tokens = tokenContract.balanceOf(holder, productionData.id);
-    payout = (proceedsPerToken * tokens) - payoutPerTokenHolder[holder];
+    payout = (proceedsPerToken * tokens) - payoutPerTokenTracking[holder];
     payoutPerTokenHolder[holder] += payout;
+    payoutPerTokenTracking[holder] += payout;
     if (payout > 0) {
       emit ProceedsClaimed(payout, holder);
       IERC20(productionData.currency).transfer(holder, payout);
@@ -223,9 +225,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     require(msg.sender == address(tokenContract), "Unknown token contract sender");
     require(tokenId == productionData.id, "Invalid token id");
     uint256 currentBalance = tokenContract.balanceOf(currentOwner, productionData.id);
-    uint256 payoutTransfer = (numTokens * payoutPerTokenHolder[currentOwner]) / currentBalance;
-    payoutPerTokenHolder[currentOwner] -= payoutTransfer;
-    payoutPerTokenHolder[newOwner] += payoutTransfer;
+    uint256 payoutTransfer = (numTokens * payoutPerTokenTracking[currentOwner]) / currentBalance;
+    payoutPerTokenTracking[currentOwner] -= payoutTransfer;
+    payoutPerTokenTracking[newOwner] += payoutTransfer;
   }
 
   function onERC1155Received(
