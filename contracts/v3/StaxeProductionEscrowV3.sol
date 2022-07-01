@@ -3,7 +3,7 @@
 pragma solidity ^0.8.15;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -25,7 +25,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   mapping(address => uint16[]) public perksByOwner;
   mapping(address => EnumerableSet.UintSet) private perkSetByOwner;
 
-  IERC1155 private tokenContract;
+  IERC1155Upgradeable private tokenContract;
 
   uint256 public fundsRaised;
   uint256 public proceedsEarned;
@@ -137,7 +137,12 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     swipeToCreator(caller, platformTreasury);
   }
 
-  function close(address caller) external override hasState(ProductionState.FINISHED) onlyOwner {
+  function close(address caller, address platformTreasury)
+    external
+    override
+    hasState(ProductionState.FINISHED)
+    onlyOwner
+  {
     // if we have an end timestamp we can allow closing anyone (e.g. our relay with an autotask)
     // otherwise if no timestamp we hand this over to the production owner.
     require(
@@ -147,15 +152,6 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     );
     emit StateChanged(ProductionState.FINISHED, ProductionState.CLOSED, caller);
     productionData.state = ProductionState.CLOSED;
-  }
-
-  function swipe(address caller, address platformTreasury)
-    external
-    override
-    hasState(ProductionState.CLOSED)
-    onlyOwner
-    creatorOnly(caller)
-  {
     swipeToCreator(caller, platformTreasury);
   }
 
@@ -216,7 +212,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   // --- Callback functions ---
 
   function onTokenTransfer(
-    IERC1155, /* tokenContract */
+    IERC1155Upgradeable, /* tokenContract */
     uint256 tokenId,
     address currentOwner,
     address newOwner,
@@ -240,7 +236,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     require(productionData.id == 0, "Token already set");
     require(productionData.totalSupply == amount, "Wrong amount minted");
     productionData.id = tokenId;
-    tokenContract = IERC1155(msg.sender);
+    tokenContract = IERC1155Upgradeable(msg.sender);
     return this.onERC1155Received.selector;
   }
 

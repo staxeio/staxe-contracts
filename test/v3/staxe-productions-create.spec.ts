@@ -29,7 +29,7 @@ describe('StaxeProductionsV3: create productions', () => {
     it('creates a new production for organizer', async () => {
       // given
       const production = newProduction(100, 1n * 10n ** 18n);
-      const escrowAddress = '0xf99B3859f4986f383502f64D97BCc74715537016';
+      const escrowAddress = '0x2cb87aE41081361B22B0D65130bEC2C392ED5982';
 
       // when
       await expect(factory.connect(organizer).createProduction(production))

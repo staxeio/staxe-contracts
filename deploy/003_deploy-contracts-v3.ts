@@ -23,7 +23,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // ----- Tokens
   const Token = await ethers.getContractFactory('StaxeProductionTokenV3');
-  const token = (await Token.deploy()) as StaxeProductionTokenV3;
+  const token = (await upgrades.deployProxy(Token)) as StaxeProductionTokenV3;
   await token.deployed();
   console.log(`StaxeProductionTokenV3 deployed to ${token.address}`);
 

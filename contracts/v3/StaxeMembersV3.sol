@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgrad
 
 import "./interfaces/IMembersV3.sol";
 
+/// @custom:security-contact info@staxe.io
 contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
   bytes32 public constant INVESTOR_ROLE = keccak256("INVESTOR_ROLE");
   bytes32 public constant ORGANIZER_ROLE = keccak256("ORGANIZER_ROLE");
@@ -17,6 +18,11 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
   // ---- Events ----
 
   // ---- Functions ----
+
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
 
   function initialize() public initializer {
     __AccessControlEnumerable_init();

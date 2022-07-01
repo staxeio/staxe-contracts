@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/metatx/ERC2771ContextUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -22,6 +21,7 @@ import "./interfaces/IWETH.sol";
 
 // import "hardhat/console.sol";
 
+/// @custom:security-contact info@staxe.io
 contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IProductionsV3 {
   using CountersUpgradeable for CountersUpgradeable.Counter;
   using AddressUpgradeable for address payable;
@@ -158,7 +158,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
   }
 
   function close(uint256 id) external validProduction(id) {
-    productionEscrows[id].escrow.close(_msgSender());
+    productionEscrows[id].escrow.close(_msgSender(), treasury);
   }
 
   // ---- Buy Tokens ----
