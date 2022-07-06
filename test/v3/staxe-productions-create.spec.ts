@@ -29,13 +29,11 @@ describe('StaxeProductionsV3: create productions', () => {
     it('creates a new production for organizer', async () => {
       // given
       const production = newProduction(100, 1n * 10n ** 18n);
-      const escrowAddress = '0x2cb87aE41081361B22B0D65130bEC2C392ED5982';
 
       // when
-      await expect(factory.connect(organizer).createProduction(production))
-        .to.emit(factory, 'ProductionCreated')
-        .withArgs(1, organizer.address, production.totalSupply, escrowAddress);
-      expect(await token.balanceOf(escrowAddress, 1)).to.equal(production.totalSupply);
+      await expect(factory.connect(organizer).createProduction(production)).to.emit(factory, 'ProductionCreated');
+      const created = await productions.getProduction(1);
+      expect(await token.balanceOf(created.escrow, 1)).to.equal(production.totalSupply);
     });
 
     it('creates a new production with perks', async () => {

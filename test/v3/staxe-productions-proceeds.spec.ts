@@ -37,10 +37,12 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
       const proceeds = 10n ** 5n;
       const tokensToBuy1 = 20,
         tokensToBuy2 = 30;
+      const totalTokens = 100,
+        tokensSold = 50n;
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 6n)
+        newProduction(totalTokens, 10n ** 6n)
       );
       await buyTokens(productions.connect(investor1), investor1.address, id, tokensToBuy1);
       await buyTokens(productions.connect(investor2), investor2.address, id, tokensToBuy2);
@@ -61,33 +63,34 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
       expect(data1.balance).to.be.equal(tokensToBuy1);
       expect(data1.perksOwned.length).to.be.equal(0);
       expect(data1.proceedsClaimed).to.be.equal(0);
-      expect(data1.proceedsAvailable).to.be.equal((proceeds / 100n) * BigInt(tokensToBuy1));
+      expect(data1.proceedsAvailable).to.be.equal((proceeds / tokensSold) * BigInt(tokensToBuy1), 'proceeds data1');
 
       expect(data2.balance).to.be.equal(tokensToBuy2);
       expect(data2.perksOwned.length).to.be.equal(0);
       expect(data2.proceedsClaimed).to.be.equal(0);
-      expect(data2.proceedsAvailable).to.be.equal((proceeds / 100n) * BigInt(tokensToBuy2));
+      expect(data2.proceedsAvailable).to.be.equal((proceeds / tokensSold) * BigInt(tokensToBuy2), 'proceeds data2');
 
       expect(data3.balance).to.be.equal(tokensToBuy1);
       expect(data3.perksOwned.length).to.be.equal(0);
       expect(data3.proceedsAvailable).to.be.equal(0);
-      expect(data3.proceedsClaimed).to.be.equal((proceeds / 100n) * BigInt(tokensToBuy1));
+      expect(data3.proceedsClaimed).to.be.equal((proceeds / tokensSold) * BigInt(tokensToBuy1), 'proceeds data3');
 
       expect(data4.balance).to.be.equal(tokensToBuy2);
       expect(data4.perksOwned.length).to.be.equal(0);
       expect(data4.proceedsAvailable).to.be.equal(0);
-      expect(data4.proceedsClaimed).to.be.equal((proceeds / 100n) * BigInt(tokensToBuy2));
+      expect(data4.proceedsClaimed).to.be.equal((proceeds / tokensSold) * BigInt(tokensToBuy2), 'proceeds data4');
 
       const escrow = (await productions.getProduction(id)).escrow;
       const currency = await attachToken(usdt);
       const balanceEscrow = await currency.balanceOf(escrow);
-      expect(balanceEscrow).to.be.equal(proceeds / 2n);
+      expect(balanceEscrow).to.be.equal(0);
     });
 
     it('sends proceeds and calculate token holder share after token transfer', async () => {
       // given
       const proceeds = 10n ** 5n;
-      const tokensToBuy = 20;
+      const tokensToBuy = 20,
+        tokensSold = BigInt(tokensToBuy);
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
@@ -112,7 +115,7 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
       // then
       expect(data1.balance).to.be.equal(tokensToBuy / 2);
       expect(data1.perksOwned.length).to.be.equal(0);
-      expect(data1.proceedsClaimed).to.be.equal((proceeds / 100n) * BigInt(tokensToBuy));
+      expect(data1.proceedsClaimed).to.be.equal((proceeds / tokensSold) * BigInt(tokensToBuy));
       expect(data1.proceedsAvailable).to.be.equal(0);
 
       expect(data2.balance).to.be.equal(tokensToBuy / 2);
@@ -121,17 +124,17 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
       expect(data2.proceedsAvailable).to.be.equal(0);
 
       expect(data3.proceedsClaimed).to.be.equal(
-        (proceeds / 100n) * BigInt(tokensToBuy) + (proceeds / 100n) * BigInt(tokensToBuy / 2)
+        (proceeds / tokensSold) * BigInt(tokensToBuy) + (proceeds / tokensSold) * BigInt(tokensToBuy / 2)
       );
       expect(data3.proceedsAvailable).to.be.equal(0);
 
       expect(data4.proceedsClaimed).to.be.equal(0);
-      expect(data4.proceedsAvailable).to.be.equal((proceeds / 100n) * BigInt(tokensToBuy / 2));
+      expect(data4.proceedsAvailable).to.be.equal((proceeds / tokensSold) * BigInt(tokensToBuy / 2));
 
       const escrow = (await productions.getProduction(id)).escrow;
       const currency = await attachToken(usdt);
       const balanceEscrow = await currency.balanceOf(escrow);
-      expect(balanceEscrow).to.be.equal(proceeds * 2n - (proceeds * 2n * 15n) / 100n);
+      expect(balanceEscrow).to.be.equal(proceeds * 2n - (proceeds * 2n * 15n) / tokensSold);
     });
   });
 });

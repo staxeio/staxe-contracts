@@ -108,7 +108,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
       perksOwned[i] = Perk({id: id, total: perk.total, claimed: count, minTokensRequired: perk.minTokensRequired});
     }
     proceedsClaimed = payoutPerTokenHolder[tokenOwner];
-    proceedsAvailable = ((balance * proceedsEarned) / productionData.totalSupply) - payoutPerTokenTracking[tokenOwner];
+    proceedsAvailable = ((balance * proceedsEarned) / productionData.soldCounter) - payoutPerTokenTracking[tokenOwner];
     return (balance, perksOwned, proceedsClaimed, proceedsAvailable);
   }
 
@@ -187,7 +187,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     onlyOwner
     returns (uint256 payout)
   {
-    uint256 proceedsPerToken = proceedsEarned / productionData.totalSupply;
+    uint256 proceedsPerToken = proceedsEarned / productionData.soldCounter;
     uint256 tokens = tokenContract.balanceOf(holder, productionData.id);
     payout = (proceedsPerToken * tokens) - payoutPerTokenTracking[holder];
     payoutPerTokenHolder[holder] += payout;
