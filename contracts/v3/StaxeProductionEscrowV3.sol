@@ -1,11 +1,12 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
@@ -14,6 +15,7 @@ import "./interfaces/IProductionEscrowV3.sol";
 
 contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
   using EnumerableSet for EnumerableSet.UintSet;
+  using SafeERC20 for IERC20;
 
   // --- Data ---
 
@@ -187,14 +189,14 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     onlyOwner
     returns (uint256 payout)
   {
-    uint256 proceedsPerToken = proceedsEarned / productionData.soldCounter;
     uint256 tokens = tokenContract.balanceOf(holder, productionData.id);
-    payout = (proceedsPerToken * tokens) - payoutPerTokenTracking[holder];
+    payout = ((tokens * proceedsEarned) / productionData.soldCounter) - payoutPerTokenTracking[holder];
     payoutPerTokenHolder[holder] += payout;
     payoutPerTokenTracking[holder] += payout;
     if (payout > 0) {
       emit ProceedsClaimed(payout, holder);
-      IERC20(productionData.currency).transfer(holder, payout);
+      IERC20 token = IERC20(productionData.currency);
+      token.safeTransfer(holder, payout);
     }
   }
 
@@ -268,8 +270,8 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     platformShare = (balance * productionData.platformSharePercentage) / 100;
     balanceLeft = balance - platformShare;
     emit FundingClaimed(balanceLeft, platformShare, caller);
-    currency.transfer(productionData.creator, balanceLeft);
-    currency.transfer(platformTreasury, platformShare);
+    currency.safeTransfer(productionData.creator, balanceLeft);
+    currency.safeTransfer(platformTreasury, platformShare);
   }
 
   function isCreatorOrDelegate(address caller) private view returns (bool) {
