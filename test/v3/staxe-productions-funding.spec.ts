@@ -72,6 +72,29 @@ describe('StaxeProductionsV3: retrieve funding', () => {
       expect(balanceOwner).to.be.equal((funds * 10n) / 100n);
     });
 
+    it('automatically transfers funding when finishing crowdsale', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const funds = await buyTokens(productions.connect(investor1), investor1.address, id, 5);
+
+      // when
+      await productions.connect(organizer).finishCrowdsale(id);
+
+      // then
+      const escrow = (await productions.getProduction(id)).escrow;
+      const currency = await attachToken(usdt);
+      const balanceEscrow = await currency.balanceOf(escrow);
+      expect(balanceEscrow).to.be.equal(0);
+      const balanceOrganizer = await currency.balanceOf(organizer.address);
+      expect(balanceOrganizer).to.be.equal((funds * 90n) / 100n);
+      const balanceOwner = await currency.balanceOf(owner.address);
+      expect(balanceOwner).to.be.equal((funds * 10n) / 100n);
+    });
+
     it('rejects transferring funds after finishing crowdsale', async () => {
       // given
       const id = await createAndApproveProduction(
@@ -86,4 +109,6 @@ describe('StaxeProductionsV3: retrieve funding', () => {
       await expect(productions.connect(organizer).transferFunding(id)).to.be.revertedWith('Not in required state');
     });
   });
+
+  describe('Security Checks: Transfer Funding', () => {});
 });
