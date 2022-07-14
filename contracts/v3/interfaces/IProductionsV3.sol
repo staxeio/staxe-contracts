@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 import "./IProductionEscrowV3.sol";
 
@@ -31,11 +31,11 @@ interface IProductionsV3 {
     uint256 totalAmount
   ) external returns (uint256 id);
 
-  function getTokenPrice(uint256 id, uint256 amount) external view returns (IERC20, uint256);
+  function getTokenPrice(uint256 id, uint256 amount) external view returns (IERC20Upgradeable, uint256);
 
   function getTokenPriceFor(
     uint256 id,
     uint256 amount,
     address buyer
-  ) external view returns (IERC20, uint256);
+  ) external view returns (IERC20Upgradeable, uint256);
 }

@@ -1,5 +1,10 @@
 import { expect } from 'chai';
-import { StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
+import {
+  IProductionEscrowV3,
+  StaxeProductionsFactoryV3,
+  StaxeProductionsV3,
+  StaxeProductionTokenV3,
+} from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { attachEscrow, createProduction, harness, newProduction } from '../utils/harness';
 import { USDT } from '../../utils/swap';
@@ -161,6 +166,13 @@ describe('StaxeProductionsV3: create productions', () => {
 
       // when
       await expect(factory.connect(organizer).createProduction(data)).to.be.revertedWith('Unknown ERC20 token');
+    });
+
+    it('reject creating a production from unknown factory', async () => {
+      // when
+      await expect(
+        productions.connect(organizer).mintProduction(organizer.address, organizer.address, 100)
+      ).to.be.revertedWith('Untrusted Escrow Factory');
     });
   });
 });

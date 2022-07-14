@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./IProductionTokenTrackerV3.sol";
 
@@ -30,7 +30,7 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
     uint256 totalSupply;
     uint256 soldCounter;
     uint256 maxTokensUnknownBuyer;
-    IERC20 currency;
+    IERC20Upgradeable currency;
     ProductionState state;
     string dataHash;
     uint256 crowdsaleEndDate;
@@ -71,7 +71,7 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
 
   function getTokensAvailable() external view returns (uint256);
 
-  function getTokenPrice(uint256 amount, address buyer) external view returns (IERC20, uint256);
+  function getTokenPrice(uint256 amount, address buyer) external view returns (IERC20Upgradeable, uint256);
 
   function approve(address approver) external;
 

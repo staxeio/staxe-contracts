@@ -30,7 +30,7 @@ function newProduction(
   };
 }
 
-describe('StaxeProductionsV2', function () {
+xdescribe('StaxeProductionsV2', function () {
   // contracts
   let token: StaxeProductionTokenV2;
   let productions: StaxeProductionsV2;

@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
+import {
+  ERC20,
+  Multicall2,
+  StaxeProductionsFactoryV3,
+  StaxeProductionsV3,
+  StaxeProductionTokenV3,
+} from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {
   attachEscrow,
@@ -11,6 +17,10 @@ import {
 } from '../utils/harness';
 import { USDT } from '../../utils/swap';
 import { buyToken, getQuote } from '../utils/uniswap';
+import { ethers } from 'hardhat';
+
+import { abi as erc20Abi } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { abi as productionsAbi } from '../../artifacts/contracts/v3/StaxeProductionsV3.sol/StaxeProductionsV3.json';
 
 describe('StaxeProductionsV3: buy tokens', () => {
   // contracts
@@ -104,14 +114,6 @@ describe('StaxeProductionsV3: buy tokens', () => {
     });
   });
 
-  /*
-    Test cases:
-    - buy non-existing token
-    - token limit for non-investor buyer
-    - Buying tokens for closed production
-    - Verify events created
-  */
-
   // --------------------------- BUY WITH TOKENS ---------------------------
 
   describe('Buy tokens with stable coins', () => {
@@ -130,6 +132,39 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // when
       await (await attachToken(price[0])).connect(investor1).approve(productions.address, price[1]);
       await productions.connect(investor1).buyTokensWithTokens(id, investor1.address, tokensToBuy, 0);
+
+      // then
+      const balance = await token.balanceOf(investor1.address, id);
+      expect(balance).to.be.equal(tokensToBuy);
+      const escrow = (await productions.getProduction(id)).escrow;
+      const balanceEscrow = await (await attachToken(usdt)).balanceOf(escrow);
+      expect(balanceEscrow).to.be.equal(price[1]);
+    });
+
+    xit('buys tokens with target token in multicall', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const tokensToBuy = 8;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+      await buyToken(price[0], price[1].toBigInt(), swapPrice, investor1);
+
+      const ierc20 = new ethers.utils.Interface(erc20Abi);
+      const callData1 = ierc20.encodeFunctionData('approve', [productions.address, price[1]]);
+      const iprod = new ethers.utils.Interface(productionsAbi);
+      const callData2 = iprod.encodeFunctionData('buyTokensWithTokens', [id, investor1.address, tokensToBuy, 0]);
+
+      // when
+      const multicallFactory = await ethers.getContractFactory('Multicall2');
+      const multicall = multicallFactory.attach('0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441') as Multicall2;
+      await multicall.connect(investor1).tryAggregate(true, [
+        { target: price[0], callData: callData1 },
+        { target: productions.address, callData: callData2 },
+      ]);
 
       // then
       const balance = await token.balanceOf(investor1.address, id);
@@ -163,11 +198,6 @@ describe('StaxeProductionsV3: buy tokens', () => {
       expect(balance).to.be.equal(0);
     });
   });
-
-  /*
-    Test cases:
-    - Approving not enough tokens
-  */
 
   // --------------------------- BUY WITH FIAT / RELAY ---------------------------
 
@@ -361,7 +391,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
   // --------------------------- SECURITY CHECKS ---------------------------
 
   describe('Security and lifecycle checks', () => {
-    it('Cannot buy tokens directly on escrow', async () => {
+    it('cannot buy tokens directly on escrow', async () => {
       // given
       const id = await createAndApproveProduction(
         factory.connect(organizer),
@@ -377,7 +407,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // then
     });
 
-    it('Cannot buy tokens on unapproved production', async () => {
+    it('cannot buy tokens on unapproved production', async () => {
       // given
       const id = await createProduction(factory.connect(organizer), newProduction(100, 10n ** 6n));
       const tokensToBuy = 2;
@@ -392,7 +422,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       );
     });
 
-    it('Cannot buy tokens on canceled production', async () => {
+    it('cannot buy tokens on canceled production', async () => {
       // given
       const id = await createProduction(factory.connect(organizer), newProduction(100, 10n ** 6n));
       const tokensToBuy = 2;
@@ -407,7 +437,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       );
     });
 
-    it('Cannot buy tokens for non-existing production', async () => {
+    it('cannot buy tokens for non-existing production', async () => {
       // given
       const id = await createProduction(factory.connect(organizer), newProduction(100, 10n ** 6n));
       const tokensToBuy = 2;
@@ -420,6 +450,27 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await expect(
         productions.connect(investor1).buyTokensWithTokens(id + 1, investor1.address, 1, 0)
       ).to.be.revertedWith('Production does not exist');
+    });
+
+    it('cannot more than token limit for non-investor buyer', async () => {
+      // given
+      const maxTokensUnknownBuyer = 5;
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n, [], maxTokensUnknownBuyer)
+      );
+      const buyer = approver;
+      const tokensToBuy = maxTokensUnknownBuyer + 1;
+      const price = await productions.connect(buyer).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+      await buyToken(price[0], price[1].toBigInt(), swapPrice, buyer);
+
+      // when
+      await (await attachToken(price[0])).connect(buyer).approve(productions.address, price[1]);
+      await expect(
+        productions.connect(approver).buyTokensWithTokens(id, buyer.address, tokensToBuy, 0)
+      ).to.be.revertedWith('Needs investor role to buy amount of tokens');
     });
   });
 });

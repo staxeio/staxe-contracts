@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IProductionsV3.sol";
@@ -62,7 +62,7 @@ contract StaxeProductionsFactoryV3 is Ownable {
       totalSupply: data.totalSupply,
       maxTokensUnknownBuyer: data.maxTokensUnknownBuyer,
       soldCounter: 0,
-      currency: IERC20(data.currency),
+      currency: IERC20Upgradeable(data.currency),
       state: IProductionEscrowV3.ProductionState.CREATED,
       dataHash: data.dataHash,
       crowdsaleEndDate: data.crowdsaleEndDate,

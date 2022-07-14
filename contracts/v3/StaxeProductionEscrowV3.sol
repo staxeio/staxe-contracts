@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
@@ -15,7 +15,7 @@ import "./interfaces/IProductionEscrowV3.sol";
 
 contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
   using EnumerableSet for EnumerableSet.UintSet;
-  using SafeERC20 for IERC20;
+  using SafeERC20Upgradeable for IERC20Upgradeable;
 
   // --- Data ---
 
@@ -83,7 +83,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return productionData.totalSupply - productionData.soldCounter;
   }
 
-  function getTokenPrice(uint256 amount, address) external view override returns (IERC20, uint256) {
+  function getTokenPrice(uint256 amount, address) external view override returns (IERC20Upgradeable, uint256) {
     require(amount <= productionData.totalSupply - productionData.soldCounter, "");
     return (productionData.currency, amount * tokenPrice);
   }
@@ -163,7 +163,11 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     uint256 price,
     uint16 perkId
   ) external override hasState(ProductionState.OPEN) onlyOwner {
-    require(amount <= productionData.totalSupply - productionData.soldCounter);
+    require(amount <= productionData.totalSupply - productionData.soldCounter, "Not enough tokens available");
+    require(
+      members.isInvestor(buyer) || amount <= productionData.maxTokensUnknownBuyer,
+      "Needs investor role to buy amount of tokens"
+    );
     claimPerk(buyer, amount, perkId);
     fundsRaised += price;
     emit TokenBought(buyer, amount, price, perkId);
@@ -195,7 +199,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     payoutPerTokenTracking[holder] += payout;
     if (payout > 0) {
       emit ProceedsClaimed(payout, holder);
-      IERC20 token = IERC20(productionData.currency);
+      IERC20Upgradeable token = IERC20Upgradeable(productionData.currency);
       token.safeTransfer(holder, payout);
     }
   }
@@ -265,7 +269,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     private
     returns (uint256 balanceLeft, uint256 platformShare)
   {
-    IERC20 currency = IERC20(productionData.currency);
+    IERC20Upgradeable currency = IERC20Upgradeable(productionData.currency);
     uint256 balance = currency.balanceOf(address(this));
     platformShare = (balance * productionData.platformSharePercentage) / 100;
     balanceLeft = balance - platformShare;

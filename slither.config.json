@@ -1,5 +1,5 @@
 {
-  "detectors_to_exclude": "detector37,detector60,detector62.detector68",
-  "filter_paths": "openzeppelin|console.sol",
+  "detectors_to_exclude": "naming-convention,external-function,low-level-calls",
+  "filter_paths": "openzeppelin|V2.sol",
   "json": "artifacts/slither.json"
 }

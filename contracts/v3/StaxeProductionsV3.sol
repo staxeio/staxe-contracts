@@ -1,13 +1,15 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/metatx/ERC2771ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
@@ -22,15 +24,21 @@ import "./interfaces/IWETH.sol";
 // import "hardhat/console.sol";
 
 /// @custom:security-contact info@staxe.io
-contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IProductionsV3 {
+contract StaxeProductionsV3 is
+  ERC2771ContextUpgradeable,
+  OwnableUpgradeable,
+  ReentrancyGuardUpgradeable,
+  IProductionsV3
+{
   using CountersUpgradeable for CountersUpgradeable.Counter;
   using AddressUpgradeable for address payable;
+  using SafeERC20Upgradeable for IERC20Upgradeable;
 
   // ---------- State ----------
 
   CountersUpgradeable.Counter private tokenIds;
-  mapping(address => bool) private trustedEscrowFactories;
-  mapping(address => bool) private trustedErc20Coins;
+  mapping(address => bool) public trustedEscrowFactories;
+  mapping(address => bool) public trustedErc20Coins;
 
   ISwapRouter public constant router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
@@ -73,11 +81,14 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     IWETH _nativeWrapper,
     address _treasury
   ) public initializer {
+    require(_treasury != address(0), "Treasury must be valid address");
     productionToken = _productionToken;
     members = _members;
     nativeWrapper = _nativeWrapper;
     treasury = _treasury;
+    tokenIds.increment();
     __Ownable_init();
+    __ReentrancyGuard_init();
   }
 
   // ---- Data Access ----
@@ -89,7 +100,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
       IProductionEscrowV3.Perk[] memory perks,
       uint256 fundsRaised
     ) = productionEscrows[id].escrow.getProductionDataWithPerks();
-    uint256 balance = IERC20(data.currency).balanceOf(address(productionEscrows[id].escrow));
+    uint256 balance = IERC20Upgradeable(data.currency).balanceOf(address(productionEscrows[id].escrow));
     return
       Production({
         id: id,
@@ -101,7 +112,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
       });
   }
 
-  function getTokenPrice(uint256 id, uint256 amount) external view override returns (IERC20, uint256) {
+  function getTokenPrice(uint256 id, uint256 amount) external view override returns (IERC20Upgradeable, uint256) {
     require(productionEscrows[id].id != 0, "Unknown production");
     return productionEscrows[id].escrow.getTokenPrice(amount, _msgSender());
   }
@@ -110,7 +121,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     uint256 id,
     uint256 amount,
     address buyer
-  ) external view override validProduction(id) validBuyer(buyer) returns (IERC20, uint256) {
+  ) external view override validProduction(id) validBuyer(buyer) returns (IERC20Upgradeable, uint256) {
     return productionEscrows[id].escrow.getTokenPrice(amount, buyer);
   }
 
@@ -135,29 +146,29 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     IProductionEscrowV3 escrow,
     address creator,
     uint256 totalAmount
-  ) external override returns (uint256 id) {
+  ) external override nonReentrant returns (uint256 id) {
     require(trustedEscrowFactories[_msgSender()], "Untrusted Escrow Factory");
     require(trustedErc20Coins[address(escrow.getProductionData().currency)], "Unknown ERC20 token");
-    tokenIds.increment();
     id = tokenIds.current();
     emit ProductionMinted(id, creator, totalAmount, address(escrow));
-    productionToken.mintToken(IProductionTokenTrackerV3(escrow), id, totalAmount);
     productionEscrows[id] = Escrow({id: id, escrow: escrow});
+    tokenIds.increment();
+    productionToken.mintToken(IProductionTokenTrackerV3(escrow), id, totalAmount);
   }
 
-  function approve(uint256 id) external validProduction(id) {
+  function approve(uint256 id) external nonReentrant validProduction(id) {
     productionEscrows[id].escrow.approve(_msgSender());
   }
 
-  function decline(uint256 id) external validProduction(id) {
+  function decline(uint256 id) external nonReentrant validProduction(id) {
     productionEscrows[id].escrow.decline(_msgSender());
   }
 
-  function finishCrowdsale(uint256 id) external validProduction(id) {
+  function finishCrowdsale(uint256 id) external nonReentrant validProduction(id) {
     productionEscrows[id].escrow.finish(_msgSender(), treasury);
   }
 
-  function close(uint256 id) external validProduction(id) {
+  function close(uint256 id) external nonReentrant validProduction(id) {
     productionEscrows[id].escrow.close(_msgSender(), treasury);
   }
 
@@ -168,12 +179,12 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external payable validProduction(id) validBuyer(buyer) {
+  ) external payable nonReentrant validProduction(id) validBuyer(buyer) {
     require(amount > 0, "Must pass amount > 0");
     require(msg.value > 0, "Must pass msg.value > 0");
     IProductionEscrowV3 escrow = productionEscrows[id].escrow;
     require(amount <= escrow.getTokensAvailable(), "Cannot buy more than available");
-    (IERC20 token, uint256 price) = escrow.getTokenPrice(amount, buyer);
+    (IERC20Upgradeable token, uint256 price) = escrow.getTokenPrice(amount, buyer);
     swapToTargetTokenAmountOut(token, price, address(escrow));
     emit TokenBought(id, buyer, amount, price, perk);
     escrow.buyTokens(buyer, amount, price, perk);
@@ -184,7 +195,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external validProduction(id) validBuyer(buyer) {
+  ) external nonReentrant validProduction(id) validBuyer(buyer) {
     buyWithTransfer(id, amount, buyer, buyer, perk);
   }
 
@@ -193,39 +204,39 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external validProduction(id) validBuyer(buyer) trustedOnly {
+  ) external nonReentrant validProduction(id) validBuyer(buyer) trustedOnly {
     buyWithTransfer(id, amount, _msgSender(), buyer, perk);
   }
 
-  function depositProceedsInTokens(uint256 id, uint256 amount) external validProduction(id) {
+  function depositProceedsInTokens(uint256 id, uint256 amount) external nonReentrant validProduction(id) {
     IProductionEscrowV3.ProductionData memory productionData = productionEscrows[id].escrow.getProductionData();
-    IERC20 token = IERC20(productionData.currency);
+    IERC20Upgradeable token = IERC20Upgradeable(productionData.currency);
     require(token.allowance(productionData.creator, address(this)) >= amount, "Insufficient allowance");
-    token.transferFrom(productionData.creator, address(this), amount);
-    token.transfer(address(productionEscrows[id].escrow), amount);
+    token.safeTransferFrom(productionData.creator, address(this), amount);
+    token.safeTransfer(address(productionEscrows[id].escrow), amount);
     productionEscrows[id].escrow.depositProceeds(_msgSender(), amount);
     emit ProceedsDeposited(id, _msgSender(), amount);
   }
 
-  function depositProceedsInCurrency(uint256 id) external payable validProduction(id) {
+  function depositProceedsInCurrency(uint256 id) external payable nonReentrant validProduction(id) {
     IProductionEscrowV3.ProductionData memory productionData = productionEscrows[id].escrow.getProductionData();
-    IERC20 token = IERC20(productionData.currency);
+    IERC20Upgradeable token = IERC20Upgradeable(productionData.currency);
     uint256 amount = swapToTargetTokenAmountIn(token, address(productionEscrows[id].escrow));
-    productionEscrows[id].escrow.depositProceeds(_msgSender(), amount);
     emit ProceedsDeposited(id, _msgSender(), amount);
+    productionEscrows[id].escrow.depositProceeds(_msgSender(), amount);
   }
 
-  function transferProceeds(uint256 id) external validProduction(id) {
+  function transferProceeds(uint256 id) external nonReentrant validProduction(id) {
     uint256 amount = productionEscrows[id].escrow.transferProceeds(_msgSender());
     emit ProceedsClaimed(id, _msgSender(), amount);
   }
 
-  function transferFunding(uint256 id) external validProduction(id) {
+  function transferFunding(uint256 id) external nonReentrant validProduction(id) {
     (uint256 amount, uint256 platformShare) = productionEscrows[id].escrow.transferFunding(_msgSender(), treasury);
     emit FundingClaimed(id, _msgSender(), amount, platformShare);
   }
 
-  function finishProduction(uint256 id) external validProduction(id) {
+  function finishProduction(uint256 id) external nonReentrant validProduction(id) {
     productionEscrows[id].escrow.finish(_msgSender(), treasury);
   }
 
@@ -262,7 +273,7 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
   // ---- Private ----
 
   function swapToTargetTokenAmountOut(
-    IERC20 targetToken,
+    IERC20Upgradeable targetToken,
     uint256 targetAmount,
     address targetAddress
   ) private returns (uint256 amountIn) {
@@ -288,7 +299,10 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     }
   }
 
-  function swapToTargetTokenAmountIn(IERC20 targetToken, address targetAddress) private returns (uint256 amountIn) {
+  function swapToTargetTokenAmountIn(IERC20Upgradeable targetToken, address targetAddress)
+    private
+    returns (uint256 amountIn)
+  {
     ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
       tokenIn: address(nativeWrapper),
       tokenOut: address(targetToken),
@@ -314,11 +328,11 @@ contract StaxeProductionsV3 is ERC2771ContextUpgradeable, OwnableUpgradeable, IP
     require(amount > 0, "Must pass amount > 0");
     IProductionEscrowV3 escrow = productionEscrows[id].escrow;
     require(amount <= escrow.getTokensAvailable(), "Cannot buy more than available");
-    (IERC20 token, uint256 price) = escrow.getTokenPrice(amount, buyer);
+    (IERC20Upgradeable token, uint256 price) = escrow.getTokenPrice(amount, buyer);
     require(token.allowance(tokenHolder, address(this)) >= price, "Insufficient allowance");
     emit TokenBought(id, buyer, amount, price, perk);
-    token.transferFrom(tokenHolder, address(this), price);
-    token.transfer(address(escrow), price);
+    token.safeTransferFrom(tokenHolder, address(this), price);
+    token.safeTransfer(address(escrow), price);
     escrow.buyTokens(buyer, amount, price, perk);
   }
 }
