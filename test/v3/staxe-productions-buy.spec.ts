@@ -1,11 +1,5 @@
 import { expect } from 'chai';
-import {
-  ERC20,
-  Multicall2,
-  StaxeProductionsFactoryV3,
-  StaxeProductionsV3,
-  StaxeProductionTokenV3,
-} from '../../typechain';
+import { StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {
   attachEscrow,
@@ -17,10 +11,6 @@ import {
 } from '../utils/harness';
 import { USDT } from '../../utils/swap';
 import { buyToken, getQuote } from '../utils/uniswap';
-import { ethers } from 'hardhat';
-
-import { abi as erc20Abi } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
-import { abi as productionsAbi } from '../../artifacts/contracts/v3/StaxeProductionsV3.sol/StaxeProductionsV3.json';
 
 describe('StaxeProductionsV3: buy tokens', () => {
   // contracts
@@ -132,39 +122,6 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // when
       await (await attachToken(price[0])).connect(investor1).approve(productions.address, price[1]);
       await productions.connect(investor1).buyTokensWithTokens(id, investor1.address, tokensToBuy, 0);
-
-      // then
-      const balance = await token.balanceOf(investor1.address, id);
-      expect(balance).to.be.equal(tokensToBuy);
-      const escrow = (await productions.getProduction(id)).escrow;
-      const balanceEscrow = await (await attachToken(usdt)).balanceOf(escrow);
-      expect(balanceEscrow).to.be.equal(price[1]);
-    });
-
-    xit('buys tokens with target token in multicall', async () => {
-      // given
-      const id = await createAndApproveProduction(
-        factory.connect(organizer),
-        productions.connect(approver),
-        newProduction(100, 10n ** 6n)
-      );
-      const tokensToBuy = 8;
-      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
-      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
-      await buyToken(price[0], price[1].toBigInt(), swapPrice, investor1);
-
-      const ierc20 = new ethers.utils.Interface(erc20Abi);
-      const callData1 = ierc20.encodeFunctionData('approve', [productions.address, price[1]]);
-      const iprod = new ethers.utils.Interface(productionsAbi);
-      const callData2 = iprod.encodeFunctionData('buyTokensWithTokens', [id, investor1.address, tokensToBuy, 0]);
-
-      // when
-      const multicallFactory = await ethers.getContractFactory('Multicall2');
-      const multicall = multicallFactory.attach('0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441') as Multicall2;
-      await multicall.connect(investor1).tryAggregate(true, [
-        { target: price[0], callData: callData1 },
-        { target: productions.address, callData: callData2 },
-      ]);
 
       // then
       const balance = await token.balanceOf(investor1.address, id);

@@ -84,13 +84,6 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   });
   log(`StaxeProductionsFactoryV3 deployed to ${factoryDeployment.address}`);
 
-  // ----- Util multicall
-  await deploy('Multicall2', {
-    contract: 'Multicall2',
-    from: deployer,
-    log: logDeploy,
-  });
-
   // -------------------------------------- ASSIGN DATA --------------------------------------
 
   // Token
