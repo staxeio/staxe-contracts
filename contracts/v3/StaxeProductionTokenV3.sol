@@ -22,7 +22,9 @@ contract StaxeProductionTokenV3 is
   bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-  mapping(uint256 => IProductionTokenTrackerV3) tokenMinter;
+  mapping(uint256 => IProductionTokenTrackerV3) private tokenMinter;
+  mapping(uint256 => mapping(address => uint256)) public tokenBalancesByToken;
+  mapping(address => mapping(uint256 => uint256)) public tokenBalancesByOwner;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -89,11 +91,30 @@ contract StaxeProductionTokenV3 is
     bytes memory /*data*/
   ) internal override {
     for (uint256 i = 0; i < ids.length; i++) {
-      IProductionTokenTrackerV3 tracker = tokenMinter[ids[i]];
+      uint256 amount = amounts[i];
+      uint256 id = ids[i];
+      updateTokenBalances(id, amount, from, to);
+      IProductionTokenTrackerV3 tracker = tokenMinter[id];
       if (shouldCallTokenTransferTracker(from, to, address(tracker))) {
-        tracker.onTokenTransfer(this, ids[i], from, to, amounts[i]);
+        tracker.onTokenTransfer(this, ids[i], from, to, amount);
       }
     }
+  }
+
+  function updateTokenBalances(
+    uint256 id,
+    uint256 amount,
+    address from,
+    address to
+  ) internal {
+    if (tokenBalancesByToken[id][from] >= amount) {
+      tokenBalancesByToken[id][from] -= amount;
+    }
+    tokenBalancesByToken[id][to] += amount;
+    if (tokenBalancesByOwner[from][id] >= amount) {
+      tokenBalancesByOwner[from][id] -= amount;
+    }
+    tokenBalancesByOwner[to][id] += amount;
   }
 
   function shouldCallTokenTransferTracker(
