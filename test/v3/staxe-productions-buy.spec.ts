@@ -23,11 +23,57 @@ describe('StaxeProductionsV3: buy tokens', () => {
   let approver: SignerWithAddress;
   let organizer: SignerWithAddress;
   let investor1: SignerWithAddress;
+  let investor2: SignerWithAddress;
 
   const usdt = USDT(1337) as string;
 
   beforeEach(async () => {
-    ({ token, productions, factory, owner, approver, organizer, investor1 } = await harness());
+    ({ token, productions, factory, owner, approver, organizer, investor1, investor2 } = await harness());
+  });
+
+  // --------------------------- TOKEN DATA ---------------------------
+
+  describe('Show token buyer data', () => {
+    it('shows token buyers with balances after buying and transferring tokens', async () => {
+      // given
+      const id1 = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const id2 = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const tokensToBuy = 10;
+      const price = await productions.connect(investor1).getTokenPrice(id1, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+
+      // when
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id1, investor1.address, tokensToBuy, 0, { value: swapPrice * 2n });
+      await productions
+        .connect(investor2)
+        .buyTokensWithCurrency(id1, investor2.address, tokensToBuy * 2, 0, { value: swapPrice * 3n });
+      await productions
+        .connect(investor2)
+        .buyTokensWithCurrency(id2, investor2.address, tokensToBuy * 2, 0, { value: swapPrice * 3n });
+      await token.connect(investor2).safeTransferFrom(investor2.address, investor1.address, id2, tokensToBuy, []);
+
+      // then
+      const balance1 = await token.getTokenBalances(investor1.address);
+      const balance2 = await token.getTokenBalances(investor2.address);
+      const balance3 = await token.getTokenBalances(approver.address);
+
+      expect(balance1[0].map((b) => b.toNumber())).to.be.deep.equal([id1, id2]);
+      expect(balance1[1].map((b) => b.toNumber())).to.be.deep.equal([tokensToBuy, tokensToBuy]);
+      expect(balance2[0].map((b) => b.toNumber())).to.be.deep.equal([id1, id2]);
+      expect(balance2[1].map((b) => b.toNumber())).to.be.deep.equal([tokensToBuy * 2, tokensToBuy]);
+      expect(balance3[0].length).to.be.equal(0);
+      expect(balance3[1].length).to.be.equal(0);
+    });
   });
 
   // --------------------------- BUY WITH MATIC ---------------------------

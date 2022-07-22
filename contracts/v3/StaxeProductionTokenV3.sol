@@ -6,9 +6,12 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 import "./interfaces/IProductionTokenV3.sol";
 import "./interfaces/IProductionTokenTrackerV3.sol";
+
+// import "hardhat/console.sol";
 
 /// @custom:security-contact info@staxe.io
 contract StaxeProductionTokenV3 is
@@ -18,13 +21,16 @@ contract StaxeProductionTokenV3 is
   PausableUpgradeable,
   IProductionTokenV3
 {
+  using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
+  using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+
   bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
   bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
   mapping(uint256 => IProductionTokenTrackerV3) private tokenMinter;
-  mapping(uint256 => mapping(address => uint256)) public tokenBalancesByToken;
-  mapping(address => mapping(uint256 => uint256)) public tokenBalancesByOwner;
+  mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private tokenBuyersByToken;
+  mapping(address => EnumerableSetUpgradeable.UintSet) private tokenIdsByBuyer;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -32,7 +38,7 @@ contract StaxeProductionTokenV3 is
   }
 
   function initialize() public initializer {
-    __ERC1155_init("https://staxe.app/api/tokens/{id}");
+    __ERC1155_init("https://staxe.app/api/v3/tokens/{id}");
     __AccessControl_init();
     __Pausable_init();
 
@@ -40,6 +46,19 @@ contract StaxeProductionTokenV3 is
     _grantRole(URI_SETTER_ROLE, msg.sender);
     _grantRole(PAUSER_ROLE, msg.sender);
     _grantRole(MINTER_ROLE, msg.sender);
+  }
+
+  function getTokenBalances(address buyer)
+    external
+    view
+    returns (uint256[] memory tokenIds, uint256[] memory balances)
+  {
+    require(buyer != address(0), "Invalid buyer");
+    tokenIds = EnumerableSetUpgradeable.values(tokenIdsByBuyer[buyer]);
+    balances = new uint256[](tokenIds.length);
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      balances[i] = balanceOf(buyer, tokenIds[i]);
+    }
   }
 
   function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
@@ -93,28 +112,13 @@ contract StaxeProductionTokenV3 is
     for (uint256 i = 0; i < ids.length; i++) {
       uint256 amount = amounts[i];
       uint256 id = ids[i];
-      updateTokenBalances(id, amount, from, to);
+      EnumerableSetUpgradeable.add(tokenBuyersByToken[id], to);
+      EnumerableSetUpgradeable.add(tokenIdsByBuyer[to], id);
       IProductionTokenTrackerV3 tracker = tokenMinter[id];
       if (shouldCallTokenTransferTracker(from, to, address(tracker))) {
         tracker.onTokenTransfer(this, ids[i], from, to, amount);
       }
     }
-  }
-
-  function updateTokenBalances(
-    uint256 id,
-    uint256 amount,
-    address from,
-    address to
-  ) internal {
-    if (tokenBalancesByToken[id][from] >= amount) {
-      tokenBalancesByToken[id][from] -= amount;
-    }
-    tokenBalancesByToken[id][to] += amount;
-    if (tokenBalancesByOwner[from][id] >= amount) {
-      tokenBalancesByOwner[from][id] -= amount;
-    }
-    tokenBalancesByOwner[to][id] += amount;
   }
 
   function shouldCallTokenTransferTracker(

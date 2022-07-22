@@ -12,4 +12,6 @@ interface IProductionTokenV3 is IERC1155Upgradeable {
     uint256 id,
     uint256 totalAmount
   ) external;
+
+  function getTokenBalances(address buyer) external view returns (uint256[] memory tokenIds, uint256[] memory balances);
 }
