@@ -226,7 +226,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   ) external override {
     require(msg.sender == address(tokenContract), "Unknown token contract sender");
     require(tokenId == productionData.id, "Invalid token id");
+    require(numTokens > 0, "Tokens to transfer must be > 0");
     uint256 currentBalance = tokenContract.balanceOf(currentOwner, productionData.id);
+    require(currentBalance >= numTokens, "Insufficient balance for transfer");
     uint256 payoutTransfer = (numTokens * payoutPerTokenTracking[currentOwner]) / currentBalance;
     payoutPerTokenTracking[currentOwner] -= payoutTransfer;
     payoutPerTokenTracking[newOwner] += payoutTransfer;
