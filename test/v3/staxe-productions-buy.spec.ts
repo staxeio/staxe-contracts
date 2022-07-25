@@ -49,8 +49,6 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const tokensToBuy = 10;
       const price = await productions.connect(investor1).getTokenPrice(id1, tokensToBuy);
       const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
-
-      // when
       await productions
         .connect(investor1)
         .buyTokensWithCurrency(id1, investor1.address, tokensToBuy, 0, { value: swapPrice * 2n });
@@ -61,18 +59,34 @@ describe('StaxeProductionsV3: buy tokens', () => {
         .connect(investor2)
         .buyTokensWithCurrency(id2, investor2.address, tokensToBuy * 2, 0, { value: swapPrice * 3n });
       await token.connect(investor2).safeTransferFrom(investor2.address, investor1.address, id2, tokensToBuy, []);
+      const data1 = await productions.getProduction(id1);
+      const data2 = await productions.getProduction(id2);
 
-      // then
+      // when
       const balance1 = await token.getTokenBalances(investor1.address);
       const balance2 = await token.getTokenBalances(investor2.address);
       const balance3 = await token.getTokenBalances(approver.address);
+      const tokens1 = await token.getTokenOwners(id1);
+      const tokens2 = await token.getTokenOwners(id2);
+      const tokens3 = await token.getTokenOwners(id2 + 100);
 
+      // then
       expect(balance1[0].map((b) => b.toNumber())).to.be.deep.equal([id1, id2]);
       expect(balance1[1].map((b) => b.toNumber())).to.be.deep.equal([tokensToBuy, tokensToBuy]);
       expect(balance2[0].map((b) => b.toNumber())).to.be.deep.equal([id1, id2]);
       expect(balance2[1].map((b) => b.toNumber())).to.be.deep.equal([tokensToBuy * 2, tokensToBuy]);
       expect(balance3[0].length).to.be.equal(0);
       expect(balance3[1].length).to.be.equal(0);
+      expect(tokens1[0]).to.be.deep.equal([data1.escrow, investor1.address, investor2.address]);
+      expect(tokens1[1].map((b) => b.toNumber())).to.be.deep.equal([
+        100 - 3 * tokensToBuy,
+        tokensToBuy,
+        tokensToBuy * 2,
+      ]);
+      expect(tokens2[0]).to.be.deep.equal([data2.escrow, investor2.address, investor1.address]);
+      expect(tokens2[1].map((b) => b.toNumber())).to.be.deep.equal([100 - 2 * tokensToBuy, tokensToBuy, tokensToBuy]);
+      expect(tokens3[0].length).to.be.equal(0);
+      expect(tokens3[1].length).to.be.equal(0);
     });
   });
 

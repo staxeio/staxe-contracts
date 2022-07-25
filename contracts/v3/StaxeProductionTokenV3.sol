@@ -29,8 +29,8 @@ contract StaxeProductionTokenV3 is
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
   mapping(uint256 => IProductionTokenTrackerV3) private tokenMinter;
-  mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private tokenBuyersByToken;
-  mapping(address => EnumerableSetUpgradeable.UintSet) private tokenIdsByBuyer;
+  mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private tokenOwnersByToken;
+  mapping(address => EnumerableSetUpgradeable.UintSet) private tokenIdsByOwner;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -54,10 +54,19 @@ contract StaxeProductionTokenV3 is
     returns (uint256[] memory tokenIds, uint256[] memory balances)
   {
     require(buyer != address(0), "Invalid buyer");
-    tokenIds = EnumerableSetUpgradeable.values(tokenIdsByBuyer[buyer]);
+    tokenIds = EnumerableSetUpgradeable.values(tokenIdsByOwner[buyer]);
     balances = new uint256[](tokenIds.length);
     for (uint256 i = 0; i < tokenIds.length; i++) {
       balances[i] = balanceOf(buyer, tokenIds[i]);
+    }
+  }
+
+  function getTokenOwners(uint256 id) external view returns (address[] memory owners, uint256[] memory balances) {
+    require(id > 0, "Invalid tokenId");
+    owners = EnumerableSetUpgradeable.values(tokenOwnersByToken[id]);
+    balances = new uint256[](owners.length);
+    for (uint256 i = 0; i < owners.length; i++) {
+      balances[i] = balanceOf(owners[i], id);
     }
   }
 
@@ -112,8 +121,8 @@ contract StaxeProductionTokenV3 is
     for (uint256 i = 0; i < ids.length; i++) {
       uint256 amount = amounts[i];
       uint256 id = ids[i];
-      EnumerableSetUpgradeable.add(tokenBuyersByToken[id], to);
-      EnumerableSetUpgradeable.add(tokenIdsByBuyer[to], id);
+      EnumerableSetUpgradeable.add(tokenOwnersByToken[id], to);
+      EnumerableSetUpgradeable.add(tokenIdsByOwner[to], id);
       IProductionTokenTrackerV3 tracker = tokenMinter[id];
       if (shouldCallTokenTransferTracker(from, to, address(tracker))) {
         tracker.onTokenTransfer(this, ids[i], from, to, amount);
