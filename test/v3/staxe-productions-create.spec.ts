@@ -1,10 +1,5 @@
 import { expect } from 'chai';
-import {
-  IProductionEscrowV3,
-  StaxeProductionsFactoryV3,
-  StaxeProductionsV3,
-  StaxeProductionTokenV3,
-} from '../../typechain';
+import { StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { attachEscrow, createProduction, harness, newProduction } from '../utils/harness';
 import { USDT } from '../../utils/swap';
@@ -39,6 +34,18 @@ describe('StaxeProductionsV3: create productions', () => {
       await expect(factory.connect(organizer).createProduction(production)).to.emit(factory, 'ProductionCreated');
       const created = await productions.getProduction(1);
       expect(await token.balanceOf(created.escrow, 1)).to.equal(production.totalSupply);
+    });
+
+    it('creates a new production for organizer with organizer tokens', async () => {
+      // given
+      const organizerTokens = 10;
+      const production = newProduction(100, 1n * 10n ** 18n, [], 0, USDT(1337), '', 0, 0, 10, organizerTokens);
+
+      // when
+      await expect(factory.connect(organizer).createProduction(production)).to.emit(factory, 'ProductionCreated');
+      const created = await productions.getProduction(1);
+      expect(await token.balanceOf(created.escrow, 1)).to.equal(production.totalSupply - organizerTokens);
+      expect(await token.balanceOf(organizer.address, 1)).to.equal(organizerTokens);
     });
 
     it('creates a new production with perks', async () => {

@@ -28,6 +28,7 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
     uint256 id;
     address creator;
     uint256 totalSupply;
+    uint256 organizerTokens;
     uint256 soldCounter;
     uint256 maxTokensUnknownBuyer;
     IERC20Upgradeable currency;

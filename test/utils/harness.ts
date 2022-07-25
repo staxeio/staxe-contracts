@@ -55,6 +55,7 @@ export const harness = async () => {
 
 export type ProductionData = {
   totalSupply: number;
+  organizerTokens: number;
   tokenPrice: string;
   currency: string;
   maxTokensUnknownBuyer: number;
@@ -79,10 +80,12 @@ export const newProduction = (
   dataHash = '',
   crowdsaleEndDate = 0,
   productionEndDate = 0,
-  platformSharePercentage = 10
+  platformSharePercentage = 10,
+  organizerTokens = 0
 ): ProductionData => {
   return {
     totalSupply,
+    organizerTokens,
     tokenPrice: tokenPrice + '',
     currency,
     maxTokensUnknownBuyer,

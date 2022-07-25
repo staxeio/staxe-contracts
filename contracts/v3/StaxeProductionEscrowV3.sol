@@ -245,6 +245,15 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     require(productionData.totalSupply == amount, "Wrong amount minted");
     productionData.id = tokenId;
     tokenContract = IERC1155Upgradeable(msg.sender);
+    if (productionData.organizerTokens > 0) {
+      tokenContract.safeTransferFrom(
+        address(this),
+        productionData.creator,
+        tokenId,
+        productionData.organizerTokens,
+        bytes("")
+      );
+    }
     return this.onERC1155Received.selector;
   }
 

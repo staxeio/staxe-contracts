@@ -21,6 +21,7 @@ contract StaxeProductionsFactoryV3 is Ownable {
 
   struct CreateProduction {
     uint256 totalSupply;
+    uint256 organizerTokens;
     uint256 tokenPrice;
     address currency;
     uint256 maxTokensUnknownBuyer;
@@ -60,6 +61,7 @@ contract StaxeProductionsFactoryV3 is Ownable {
       id: 0,
       creator: msg.sender,
       totalSupply: data.totalSupply,
+      organizerTokens: data.organizerTokens,
       maxTokensUnknownBuyer: data.maxTokensUnknownBuyer,
       soldCounter: 0,
       currency: IERC20Upgradeable(data.currency),
