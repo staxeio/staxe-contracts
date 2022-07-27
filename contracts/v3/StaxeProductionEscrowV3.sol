@@ -354,6 +354,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     perk.claimed += 1;
     perksByOwner[buyer].push(perkId);
     EnumerableSet.add(perkSetByOwner[buyer], perkId);
+    if (address(productionData.perkTracker) != address(0)) {
+      productionData.perkTracker.perkClaimed(buyer, productionData.id, perkId, tokensBought);
+    }
   }
 
   function countIds(uint16 perkId, uint16[] memory perkIds) private pure returns (uint16 result) {

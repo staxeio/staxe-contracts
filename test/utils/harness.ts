@@ -64,6 +64,7 @@ export type ProductionData = {
   crowdsaleEndDate: number;
   productionEndDate: number;
   platformSharePercentage: number;
+  perkTracker: string;
 };
 
 export type Perk = {
@@ -81,7 +82,8 @@ export const newProduction = (
   crowdsaleEndDate = 0,
   productionEndDate = 0,
   platformSharePercentage = 10,
-  organizerTokens = 0
+  organizerTokens = 0,
+  perkTracker = ethers.constants.AddressZero
 ): ProductionData => {
   return {
     totalSupply,
@@ -94,6 +96,7 @@ export const newProduction = (
     crowdsaleEndDate,
     productionEndDate,
     platformSharePercentage,
+    perkTracker,
   } as ProductionData;
 };
 

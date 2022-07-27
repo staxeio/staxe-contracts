@@ -11,6 +11,7 @@ import {
 } from '../utils/harness';
 import { USDT } from '../../utils/swap';
 import { buyToken, getQuote } from '../utils/uniswap';
+import { getContract } from '../../utils/deployment';
 
 describe('StaxeProductionsV3: buy tokens', () => {
   // contracts
@@ -271,23 +272,40 @@ describe('StaxeProductionsV3: buy tokens', () => {
   describe('Buy with perks', () => {
     it('buys tokens with perk', async () => {
       // given
+      const perkTracker = await getContract('PerkTrackerTest');
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 6n, [
-          { minTokensRequired: 1, total: 10 },
-          { minTokensRequired: 5, total: 5 },
-          { minTokensRequired: 10, total: 1 },
-        ])
+        newProduction(
+          100,
+          10n ** 6n,
+          [
+            { minTokensRequired: 1, total: 10 },
+            { minTokensRequired: 5, total: 5 },
+            { minTokensRequired: 10, total: 1 },
+          ],
+          0,
+          USDT(1337),
+          '',
+          0,
+          0,
+          10,
+          0,
+          perkTracker.address
+        )
       );
       const tokensToBuy = 10;
       const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
       const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
 
       // when
-      await productions
-        .connect(investor1)
-        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 3, { value: swapPrice });
+      await expect(
+        productions
+          .connect(investor1)
+          .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 3, { value: swapPrice })
+      )
+        .to.emit(perkTracker, 'PerkClaimed')
+        .withArgs(investor1.address, id, 3, tokensToBuy);
 
       // then
       const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);

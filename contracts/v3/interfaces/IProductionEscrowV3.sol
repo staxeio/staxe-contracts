@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./IProductionTokenTrackerV3.sol";
+import "./IPerkTrackerV3.sol";
 
 interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
   enum ProductionState {
@@ -37,6 +38,7 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
     uint256 crowdsaleEndDate;
     uint256 productionEndDate;
     uint8 platformSharePercentage;
+    IPerkTrackerV3 perkTracker;
   }
 
   // --- Events ---
