@@ -7,13 +7,14 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
 
 // import "hardhat/console.sol";
 
-contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver {
+contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiver, Pausable {
   using EnumerableSet for EnumerableSet.UintSet;
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -114,6 +115,10 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return (balance, perksOwned, proceedsClaimed, proceedsAvailable);
   }
 
+  // ---------------------------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------------------------
+
   function approve(address approver) external override hasState(ProductionState.CREATED) onlyOwner {
     require(members.isApprover(approver));
     emit StateChanged(ProductionState.CREATED, ProductionState.OPEN, approver);
@@ -126,7 +131,13 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     productionData.state = ProductionState.DECLINED;
   }
 
-  function finish(address caller, address platformTreasury) external override hasState(ProductionState.OPEN) onlyOwner {
+  function finish(address caller, address platformTreasury)
+    external
+    override
+    hasState(ProductionState.OPEN)
+    onlyOwner
+    whenNotPaused
+  {
     // if we have an end timestamp we can allow closing anyone (e.g. our relay with an autotask)
     // otherwise if no timestamp we hand this over to the production owner.
     require(
@@ -157,12 +168,42 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     swipeToCreator(caller, platformTreasury);
   }
 
+  function pause(address caller) external onlyOwner hasState(ProductionState.OPEN) whenNotPaused {
+    require(members.isApprover(caller), "Caller must be approver");
+    _pause();
+  }
+
+  function unpause(address caller) external onlyOwner hasState(ProductionState.OPEN) whenPaused {
+    require(members.isApprover(caller), "Caller must be approver");
+    _unpause();
+  }
+
+  function paused() public view override(Pausable, IProductionEscrowV3) onlyOwner returns (bool) {
+    return Pausable.paused();
+  }
+
+  function cancel(address caller, uint256 newCloseDate) external onlyOwner hasState(ProductionState.OPEN) whenPaused {
+    require(members.isApprover(caller), "Caller must be approver");
+    require(newCloseDate >= block.timestamp + 30 days, "Refund period not long enough");
+    emit StateChanged(ProductionState.OPEN, ProductionState.FINISHED, caller);
+    productionData.state = ProductionState.FINISHED;
+    productionData.productionEndDate = newCloseDate;
+    IERC20Upgradeable currency = IERC20Upgradeable(productionData.currency);
+    uint256 balance = currency.balanceOf(address(this));
+    proceedsEarned += balance;
+    _unpause();
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Tokens, funds and proceeds
+  // ---------------------------------------------------------------------------------------------
+
   function buyTokens(
     address buyer,
     uint256 amount,
     uint256 price,
     uint16 perkId
-  ) external override hasState(ProductionState.OPEN) onlyOwner {
+  ) external override hasState(ProductionState.OPEN) whenNotPaused onlyOwner {
     require(amount <= productionData.totalSupply - productionData.soldCounter, "Not enough tokens available");
     require(
       members.isInvestor(buyer) || amount <= productionData.maxTokensUnknownBuyer,
@@ -210,12 +251,15 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     hasState(ProductionState.OPEN)
     creatorOnly(caller)
     onlyOwner
+    whenNotPaused
     returns (uint256 amount, uint256 platformShare)
   {
     (amount, platformShare) = swipeToCreator(caller, platformTreasury);
   }
 
-  // --- Callback functions ---
+  // ---------------------------------------------------------------------------------------------
+  // Callbacks
+  // ---------------------------------------------------------------------------------------------
 
   function onTokenTransfer(
     IERC1155Upgradeable, /* tokenContract */
@@ -274,7 +318,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
       interfaceID == 0x4e2312e0; // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
   }
 
-  // --- Private ---
+  // ---------------------------------------------------------------------------------------------
+  // private
+  // ---------------------------------------------------------------------------------------------
 
   function swipeToCreator(address caller, address platformTreasury)
     private

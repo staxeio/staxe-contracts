@@ -82,6 +82,14 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
 
   function close(address caller, address platformTreasury) external;
 
+  function pause(address caller) external;
+
+  function unpause(address caller) external;
+
+  function paused() external view returns (bool);
+
+  function cancel(address caller, uint256 newCloseDate) external;
+
   function buyTokens(
     address buyer,
     uint256 amount,

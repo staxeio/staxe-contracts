@@ -93,14 +93,14 @@ contract StaxeProductionsV3 is
 
   // ---- Data Access ----
 
-  function getProduction(uint256 id) external view returns (Production memory) {
-    require(productionEscrows[id].id != 0, "Unknown production");
+  function getProduction(uint256 id) external view validProduction(id) returns (Production memory) {
     (
       IProductionEscrowV3.ProductionData memory data,
       IProductionEscrowV3.Perk[] memory perks,
       uint256 fundsRaised
     ) = productionEscrows[id].escrow.getProductionDataWithPerks();
     uint256 balance = IERC20Upgradeable(data.currency).balanceOf(address(productionEscrows[id].escrow));
+    bool paused = productionEscrows[id].escrow.paused();
     return
       Production({
         id: id,
@@ -108,12 +108,18 @@ contract StaxeProductionsV3 is
         perks: perks,
         escrow: productionEscrows[id].escrow,
         fundsRaised: fundsRaised,
-        escrowBalance: balance
+        escrowBalance: balance,
+        paused: paused
       });
   }
 
-  function getTokenPrice(uint256 id, uint256 amount) external view override returns (IERC20Upgradeable, uint256) {
-    require(productionEscrows[id].id != 0, "Unknown production");
+  function getTokenPrice(uint256 id, uint256 amount)
+    external
+    view
+    override
+    validProduction(id)
+    returns (IERC20Upgradeable, uint256)
+  {
     return productionEscrows[id].escrow.getTokenPrice(amount, _msgSender());
   }
 
@@ -156,20 +162,32 @@ contract StaxeProductionsV3 is
     productionToken.mintToken(IProductionTokenTrackerV3(escrow), id, totalAmount);
   }
 
-  function approve(uint256 id) external nonReentrant validProduction(id) {
+  function approve(uint256 id) external override nonReentrant validProduction(id) {
     productionEscrows[id].escrow.approve(_msgSender());
   }
 
-  function decline(uint256 id) external nonReentrant validProduction(id) {
+  function decline(uint256 id) external override nonReentrant validProduction(id) {
     productionEscrows[id].escrow.decline(_msgSender());
   }
 
-  function finishCrowdsale(uint256 id) external nonReentrant validProduction(id) {
+  function finishCrowdsale(uint256 id) external override nonReentrant validProduction(id) {
     productionEscrows[id].escrow.finish(_msgSender(), treasury);
   }
 
-  function close(uint256 id) external nonReentrant validProduction(id) {
+  function close(uint256 id) external override nonReentrant validProduction(id) {
     productionEscrows[id].escrow.close(_msgSender(), treasury);
+  }
+
+  function pause(uint256 id) external override nonReentrant validProduction(id) {
+    productionEscrows[id].escrow.pause(_msgSender());
+  }
+
+  function unpause(uint256 id) external override nonReentrant validProduction(id) {
+    productionEscrows[id].escrow.unpause(_msgSender());
+  }
+
+  function cancel(uint256 id, uint256 newCloseDate) external override nonReentrant validProduction(id) {
+    productionEscrows[id].escrow.cancel(_msgSender(), newCloseDate);
   }
 
   // ---- Buy Tokens ----
@@ -179,7 +197,7 @@ contract StaxeProductionsV3 is
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external payable nonReentrant validProduction(id) validBuyer(buyer) {
+  ) external payable override nonReentrant validProduction(id) validBuyer(buyer) {
     require(amount > 0, "Must pass amount > 0");
     require(msg.value > 0, "Must pass msg.value > 0");
     IProductionEscrowV3 escrow = productionEscrows[id].escrow;
@@ -195,7 +213,7 @@ contract StaxeProductionsV3 is
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external nonReentrant validProduction(id) validBuyer(buyer) {
+  ) external override nonReentrant validProduction(id) validBuyer(buyer) {
     buyWithTransfer(id, amount, buyer, buyer, perk);
   }
 
@@ -204,11 +222,11 @@ contract StaxeProductionsV3 is
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external nonReentrant validProduction(id) validBuyer(buyer) trustedOnly {
+  ) external override nonReentrant validProduction(id) validBuyer(buyer) trustedOnly {
     buyWithTransfer(id, amount, _msgSender(), buyer, perk);
   }
 
-  function depositProceedsInTokens(uint256 id, uint256 amount) external nonReentrant validProduction(id) {
+  function depositProceedsInTokens(uint256 id, uint256 amount) external override nonReentrant validProduction(id) {
     IProductionEscrowV3.ProductionData memory productionData = productionEscrows[id].escrow.getProductionData();
     IERC20Upgradeable token = IERC20Upgradeable(productionData.currency);
     require(token.allowance(productionData.creator, address(this)) >= amount, "Insufficient allowance");
@@ -218,7 +236,7 @@ contract StaxeProductionsV3 is
     emit ProceedsDeposited(id, _msgSender(), amount);
   }
 
-  function depositProceedsInCurrency(uint256 id) external payable nonReentrant validProduction(id) {
+  function depositProceedsInCurrency(uint256 id) external payable override nonReentrant validProduction(id) {
     IProductionEscrowV3.ProductionData memory productionData = productionEscrows[id].escrow.getProductionData();
     IERC20Upgradeable token = IERC20Upgradeable(productionData.currency);
     uint256 amount = swapToTargetTokenAmountIn(token, address(productionEscrows[id].escrow));
@@ -226,17 +244,17 @@ contract StaxeProductionsV3 is
     productionEscrows[id].escrow.depositProceeds(_msgSender(), amount);
   }
 
-  function transferProceeds(uint256 id) external nonReentrant validProduction(id) {
+  function transferProceeds(uint256 id) external override nonReentrant validProduction(id) {
     uint256 amount = productionEscrows[id].escrow.transferProceeds(_msgSender());
     emit ProceedsClaimed(id, _msgSender(), amount);
   }
 
-  function transferFunding(uint256 id) external nonReentrant validProduction(id) {
+  function transferFunding(uint256 id) external override nonReentrant validProduction(id) {
     (uint256 amount, uint256 platformShare) = productionEscrows[id].escrow.transferFunding(_msgSender(), treasury);
     emit FundingClaimed(id, _msgSender(), amount, platformShare);
   }
 
-  function finishProduction(uint256 id) external nonReentrant validProduction(id) {
+  function finishProduction(uint256 id) external override nonReentrant validProduction(id) {
     productionEscrows[id].escrow.finish(_msgSender(), treasury);
   }
 

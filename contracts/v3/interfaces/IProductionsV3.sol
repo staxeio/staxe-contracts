@@ -23,6 +23,7 @@ interface IProductionsV3 {
     IProductionEscrowV3 escrow;
     uint256 fundsRaised;
     uint256 escrowBalance;
+    bool paused;
   }
 
   function mintProduction(
@@ -38,4 +39,49 @@ interface IProductionsV3 {
     uint256 amount,
     address buyer
   ) external view returns (IERC20Upgradeable, uint256);
+
+  function approve(uint256 id) external;
+
+  function decline(uint256 id) external;
+
+  function finishCrowdsale(uint256 id) external;
+
+  function close(uint256 id) external;
+
+  function pause(uint256 id) external;
+
+  function unpause(uint256 id) external;
+
+  function cancel(uint256 id, uint256 newCloseDate) external;
+
+  function buyTokensWithCurrency(
+    uint256 id,
+    address buyer,
+    uint256 amount,
+    uint16 perk
+  ) external payable;
+
+  function buyTokensWithTokens(
+    uint256 id,
+    address buyer,
+    uint256 amount,
+    uint16 perk
+  ) external;
+
+  function buyTokensWithFiat(
+    uint256 id,
+    address buyer,
+    uint256 amount,
+    uint16 perk
+  ) external;
+
+  function depositProceedsInTokens(uint256 id, uint256 amount) external;
+
+  function depositProceedsInCurrency(uint256 id) external payable;
+
+  function transferProceeds(uint256 id) external;
+
+  function transferFunding(uint256 id) external;
+
+  function finishProduction(uint256 id) external;
 }
