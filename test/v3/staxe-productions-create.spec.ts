@@ -46,6 +46,8 @@ describe('StaxeProductionsV3: create productions', () => {
       const created = await productions.getProduction(1);
       expect(await token.balanceOf(created.escrow, 1)).to.equal(production.totalSupply - organizerTokens);
       expect(await token.balanceOf(organizer.address, 1)).to.equal(organizerTokens);
+      expect(created.data.soldCounter).to.be.equal(organizerTokens);
+      expect(created.data.organizerTokens).to.be.equal(organizerTokens);
     });
 
     it('creates a new production with perks', async () => {

@@ -297,6 +297,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
         productionData.organizerTokens,
         bytes("")
       );
+      productionData.soldCounter += productionData.organizerTokens;
     }
     return this.onERC1155Received.selector;
   }
