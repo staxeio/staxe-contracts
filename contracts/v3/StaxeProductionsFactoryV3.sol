@@ -46,7 +46,7 @@ contract StaxeProductionsFactoryV3 {
   }
 
   // ----- Functions -----
-  function createProduction(CreateProduction memory data) external {
+  function createProduction(CreateProduction calldata data) external {
     require(members.isOrganizer(msg.sender), "Not an organizer");
     IProductionEscrowV3.Perk[] memory perks = new IProductionEscrowV3.Perk[](data.perks.length);
     for (uint16 i = 0; i < perks.length; i++) {
