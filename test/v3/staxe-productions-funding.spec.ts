@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { StaxeProductionsFactoryV3, StaxeProductionsV3 } from '../../typechain';
+import { StaxeMembersV3, StaxeProductionsFactoryV3, StaxeProductionsV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { attachToken, buyTokens, createAndApproveProduction, harness, newProduction } from '../utils/harness';
 import { USDT } from '../../utils/swap';
@@ -8,6 +8,7 @@ describe('StaxeProductionsV3: retrieve funding', () => {
   // contracts
   let productions: StaxeProductionsV3;
   let factory: StaxeProductionsFactoryV3;
+  let members: StaxeMembersV3;
 
   // actors
   let owner: SignerWithAddress;
@@ -15,11 +16,12 @@ describe('StaxeProductionsV3: retrieve funding', () => {
   let organizer: SignerWithAddress;
   let investor1: SignerWithAddress;
   let investor2: SignerWithAddress;
+  let delegate: SignerWithAddress;
 
   const usdt = USDT(1337) as string;
 
   beforeEach(async () => {
-    ({ productions, factory, owner, approver, organizer, investor1, investor2 } = await harness());
+    ({ productions, factory, members, owner, approver, organizer, investor1, investor2, delegate } = await harness());
   });
 
   // --------------------------- Retrive funds ---------------------------
@@ -36,7 +38,14 @@ describe('StaxeProductionsV3: retrieve funding', () => {
       const funds2 = await buyTokens(productions.connect(investor2), investor1.address, id, 15);
 
       // when
-      await productions.connect(organizer).transferFunding(id);
+      await expect(productions.connect(delegate).transferFunding(id)).to.be.revertedWith(
+        'Can only be called from creator or delegate'
+      );
+      await expect(productions.connect(investor1).transferFunding(id)).to.be.revertedWith(
+        'Can only be called from creator or delegate'
+      );
+      await members.connect(organizer).addDelegate(delegate.address);
+      await productions.connect(delegate).transferFunding(id);
 
       // then
       const escrow = (await productions.getProduction(id)).escrow;

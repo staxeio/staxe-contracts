@@ -16,7 +16,8 @@ import { USDT } from '../../utils/swap';
 import { buyToken, getQuote } from './uniswap';
 
 export const harness = async () => {
-  const [owner, organizer, approver, investor1, investor2, treasury, ...addresses] = await ethers.getSigners();
+  const [owner, organizer, approver, investor1, investor2, treasury, delegate, organizer2, ...addresses] =
+    await ethers.getSigners();
   await deployments.fixture(['v3']);
 
   const contract = deploymentData.contracts.filter((contract) => contract.chainId === 1337)[0];
@@ -36,6 +37,7 @@ export const harness = async () => {
   await members.grantRole(await members.INVESTOR_ROLE(), investor1.address);
   await members.grantRole(await members.INVESTOR_ROLE(), investor2.address);
   await members.grantRole(await members.ORGANIZER_ROLE(), organizer.address);
+  await members.grantRole(await members.ORGANIZER_ROLE(), organizer2.address);
   await members.grantRole(await members.APPROVER_ROLE(), approver.address);
 
   return {
@@ -49,6 +51,8 @@ export const harness = async () => {
     investor1,
     investor2,
     treasury,
+    delegate,
+    organizer2,
     addresses,
   };
 };

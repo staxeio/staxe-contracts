@@ -33,7 +33,7 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
   }
 
   function isOrganizer(address sender) external view override returns (bool) {
-    return hasRole(ORGANIZER_ROLE, sender) || hasRole(ORGANIZER_ROLE, organizerDelegate[sender]);
+    return hasRole(ORGANIZER_ROLE, sender);
   }
 
   function isApprover(address sender) external view override returns (bool) {
