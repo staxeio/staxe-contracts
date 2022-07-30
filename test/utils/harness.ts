@@ -2,8 +2,6 @@ import { ContractTransaction } from 'ethers';
 import { ethers, deployments } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
-import deploymentData from '../../deployments/deployments-v3.json';
-
 import {
   ERC20,
   StaxeMembersV3,
@@ -14,25 +12,17 @@ import {
 } from '../../typechain';
 import { USDT } from '../../utils/swap';
 import { buyToken, getQuote } from './uniswap';
+import { getContract } from '../../utils/deployment';
 
 export const harness = async () => {
   const [owner, organizer, approver, investor1, investor2, treasury, delegate, organizer2, ...addresses] =
     await ethers.getSigners();
   await deployments.fixture(['v3']);
 
-  const contract = deploymentData.contracts.filter((contract) => contract.chainId === 1337)[0];
-
-  const Members = await ethers.getContractFactory('StaxeMembersV3');
-  const members = (await Members.attach(contract.members)) as StaxeMembersV3;
-
-  const Token = await ethers.getContractFactory('StaxeProductionTokenV3');
-  const token = (await Token.attach(contract.token)) as StaxeProductionTokenV3;
-
-  const Productions = await ethers.getContractFactory('StaxeProductionsV3');
-  const productions = (await Productions.attach(contract.productions)) as StaxeProductionsV3;
-
-  const Factory = await ethers.getContractFactory('StaxeProductionsFactoryV3');
-  const factory = (await Factory.attach(contract.factory)) as StaxeProductionsFactoryV3;
+  const members = (await getContract('StaxeMembersV3')) as StaxeMembersV3;
+  const token = (await getContract('StaxeProductionTokenV3')) as StaxeProductionTokenV3;
+  const productions = (await getContract('StaxeProductionsV3')) as StaxeProductionsV3;
+  const factory = (await getContract('StaxeProductionsFactoryV3')) as StaxeProductionsFactoryV3;
 
   await members.grantRole(await members.INVESTOR_ROLE(), investor1.address);
   await members.grantRole(await members.INVESTOR_ROLE(), investor2.address);

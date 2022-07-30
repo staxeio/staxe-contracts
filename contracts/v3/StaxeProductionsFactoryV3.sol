@@ -76,7 +76,7 @@ contract StaxeProductionsFactoryV3 {
     StaxeProductionEscrowV3 escrow = new StaxeProductionEscrowV3(productionData, perks, data.tokenPrice, members);
     escrow.transferOwnership(address(productions));
     if (data.perkTracker != address(0)) {
-      productionData.perkTracker.transferOwnership(address(escrow));
+      productionData.perkTracker.registerEscrow(escrow);
     }
     uint256 id = productions.mintProduction(escrow, msg.sender, data.totalSupply);
     emit ProductionCreated(id, msg.sender, data.totalSupply, address(escrow));

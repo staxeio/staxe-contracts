@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.9;
 
+import "./IProductionEscrowV3.sol";
+
 interface IPerkTrackerV3 {
   function perkClaimed(
     address claimer,
@@ -10,5 +12,5 @@ interface IPerkTrackerV3 {
     uint256 tokensBought
   ) external;
 
-  function transferOwnership(address newOwner) external;
+  function registerEscrow(IProductionEscrowV3 escrow) external;
 }

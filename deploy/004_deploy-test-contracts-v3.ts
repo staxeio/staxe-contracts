@@ -13,15 +13,13 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // -------------------------------------- CONTRACT DEPLOYMENT --------------------------------------
 
   // ----- PerkTrackerTest
+  const factory = (await getContract('StaxeProductionsFactoryV3')) as StaxeProductionsFactoryV3;
   await deploy('PerkTrackerTest', {
     contract: 'PerkTrackerTest',
     from: deployer,
     log: logDeploy,
-    args: [],
+    args: [factory.address],
   });
-  const factory = (await getContract('StaxeProductionsFactoryV3')) as StaxeProductionsFactoryV3;
-  const perkTracker = (await getContract('PerkTrackerTest')) as PerkTrackerTest;
-  await perkTracker.transferOwnership(factory.address);
 };
 
 module.exports = main;
