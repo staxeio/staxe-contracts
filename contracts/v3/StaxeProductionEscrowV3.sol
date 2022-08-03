@@ -131,37 +131,38 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     productionData.state = ProductionState.DECLINED;
   }
 
-  function finish(address caller, address platformTreasury)
-    external
-    override
-    hasState(ProductionState.OPEN)
-    onlyOwner
-    whenNotPaused
-  {
+  function finish(
+    address caller,
+    bool isTrustedForwarder,
+    address platformTreasury
+  ) external override hasState(ProductionState.OPEN) onlyOwner whenNotPaused {
     // if we have an end timestamp we can allow closing anyone (e.g. our relay with an autotask)
     // otherwise if no timestamp we hand this over to the production owner.
     require(
       (productionData.crowdsaleEndDate == 0 && isCreatorOrDelegate(caller)) ||
-        productionData.crowdsaleEndDate >= block.timestamp,
-      "Cannot be finished before date or only by creator"
+        (productionData.crowdsaleEndDate > 0 &&
+          productionData.crowdsaleEndDate <= block.timestamp &&
+          (isCreatorOrDelegate(caller) || isTrustedForwarder)),
+      "Cannot be finished before finish date or only by creator"
     );
     emit StateChanged(ProductionState.OPEN, ProductionState.FINISHED, caller);
     productionData.state = ProductionState.FINISHED;
     swipeToCreator(caller, platformTreasury);
   }
 
-  function close(address caller, address platformTreasury)
-    external
-    override
-    hasState(ProductionState.FINISHED)
-    onlyOwner
-  {
+  function close(
+    address caller,
+    bool isTrustedForwarder,
+    address platformTreasury
+  ) external override hasState(ProductionState.FINISHED) onlyOwner {
     // if we have an end timestamp we can allow closing anyone (e.g. our relay with an autotask)
     // otherwise if no timestamp we hand this over to the production owner.
     require(
       (productionData.productionEndDate == 0 && isCreatorOrDelegate(caller)) ||
-        productionData.productionEndDate >= block.timestamp,
-      "Cannot be closed before date or only by creator"
+        (productionData.productionEndDate > 0 &&
+          productionData.productionEndDate <= block.timestamp &&
+          (isCreatorOrDelegate(caller) || isTrustedForwarder)),
+      "Cannot be closed before close date or only by creator"
     );
     emit StateChanged(ProductionState.FINISHED, ProductionState.CLOSED, caller);
     productionData.state = ProductionState.CLOSED;

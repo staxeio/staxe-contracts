@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
+import { StaxeMembersV3, StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {
+  attachEscrow,
   attachToken,
   buyTokens,
   buyUsdtAndApprove,
@@ -10,23 +11,29 @@ import {
   newProduction,
 } from '../utils/harness';
 import { USDT } from '../../utils/swap';
+import { timeStampPlusDays, timeTravel } from '../utils/ethers-utils';
 
 describe('StaxeProductionsV3: send and retrieve proceeds', () => {
   // contracts
   let productions: StaxeProductionsV3;
   let token: StaxeProductionTokenV3;
   let factory: StaxeProductionsFactoryV3;
+  let members: StaxeMembersV3;
 
   // actors
+  let owner: SignerWithAddress;
   let approver: SignerWithAddress;
   let organizer: SignerWithAddress;
+  let organizer2: SignerWithAddress;
   let investor1: SignerWithAddress;
   let investor2: SignerWithAddress;
+  let delegate: SignerWithAddress;
 
   const usdt = USDT(1337) as string;
 
   beforeEach(async () => {
-    ({ productions, token, factory, approver, organizer, investor1, investor2 } = await harness());
+    ({ productions, token, factory, members, owner, approver, organizer, investor1, investor2, organizer2, delegate } =
+      await harness());
   });
 
   // --------------------------- Retrive funds ---------------------------
@@ -135,6 +142,158 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
       const currency = await attachToken(usdt);
       const balanceEscrow = await currency.balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(proceeds * 2n - (proceeds * 2n * 15n) / tokensSold);
+    });
+
+    it('empties leftover proceeds to organizer treasury on close', async () => {
+      // given
+      const currency = await attachToken(usdt);
+      const proceeds = 10n ** 5n;
+      const tokensToBuy = 20;
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      await buyTokens(productions.connect(investor1), investor1.address, id, tokensToBuy);
+      await productions.connect(organizer).finishCrowdsale(id);
+      await buyUsdtAndApprove(proceeds * 2n, organizer, productions.address);
+      await productions.connect(organizer).depositProceedsInTokens(id, proceeds);
+      const balanceBefore = await currency.balanceOf(organizer.address);
+
+      // when
+      await productions.connect(organizer).close(id);
+
+      // then
+      const balanceAfter = await currency.balanceOf(organizer.address);
+      expect(balanceAfter.sub(balanceBefore).toBigInt()).to.be.equal((proceeds / 100n) * 90n);
+      const escrow = (await productions.getProduction(id)).escrow;
+      const balanceEscrow = await currency.balanceOf(escrow);
+      expect(balanceEscrow.toBigInt()).to.be.equal(0n);
+    });
+  });
+
+  describe('Lifecycle and security checks', () => {
+    it('cannot finish crowdsale when not production creator, can as delegate', async () => {
+      // given
+      const totalTokens = 100;
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(totalTokens, 10n ** 6n)
+      );
+
+      // when
+      await expect(productions.connect(organizer2).finishCrowdsale(id)).to.be.revertedWith(
+        'Cannot be finished before finish date or only by creator'
+      );
+      await expect(productions.connect(owner).finishCrowdsale(id)).to.be.revertedWith(
+        'Cannot be finished before finish date or only by creator'
+      );
+      await members.connect(organizer).addDelegate(delegate.address);
+      await productions.connect(delegate).finishCrowdsale(id);
+    });
+
+    it('cannot finish crowdsale before end date, trusted forwarder can after end date', async () => {
+      // given
+      const totalTokens = 100;
+      const endDate = await timeStampPlusDays(1);
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(totalTokens, 10n ** 6n, [], 0, USDT(1337), '', endDate)
+      );
+
+      // when
+      await expect(productions.connect(organizer).finishCrowdsale(id)).to.be.revertedWith(
+        'Cannot be finished before finish date or only by creator'
+      );
+      await expect(productions.connect(owner).finishCrowdsale(id)).to.be.revertedWith(
+        'Cannot be finished before finish date or only by creator'
+      );
+      await timeTravel(2);
+      await expect(productions.connect(organizer2).finishCrowdsale(id)).to.be.revertedWith(
+        'Cannot be finished before finish date or only by creator'
+      );
+      await productions.connect(owner).finishCrowdsale(id);
+    });
+
+    it('cannot finish crowdsale directly on escrow', async () => {
+      // given
+      const totalTokens = 100;
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(totalTokens, 10n ** 6n)
+      );
+      const escrow = await attachEscrow(productions, id);
+
+      // when
+      await expect(escrow.connect(organizer).finish(organizer.address, true, organizer.address)).to.be.revertedWith(
+        'Ownable: caller is not the owner'
+      );
+    });
+
+    it('cannot close production when not production creator, can as delegate', async () => {
+      // given
+      const totalTokens = 100;
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(totalTokens, 10n ** 6n)
+      );
+      await productions.connect(organizer).finishCrowdsale(id);
+
+      // when
+      await expect(productions.connect(organizer2).close(id)).to.be.revertedWith(
+        'Cannot be closed before close date or only by creator'
+      );
+      await expect(productions.connect(owner).close(id)).to.be.revertedWith(
+        'Cannot be closed before close date or only by creator'
+      );
+      await members.connect(organizer).addDelegate(delegate.address);
+      await productions.connect(delegate).close(id);
+    });
+
+    it('cannot close production before end date, trusted forwarder can after end date', async () => {
+      // given
+      const totalTokens = 100;
+      const endDate = await timeStampPlusDays(1);
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(totalTokens, 10n ** 6n, [], 0, USDT(1337), '', 0, endDate)
+      );
+      await productions.connect(organizer).finishCrowdsale(id);
+
+      // when
+      await expect(productions.connect(organizer).close(id)).to.be.revertedWith(
+        'Cannot be closed before close date or only by creator'
+      );
+      await expect(productions.connect(owner).close(id)).to.be.revertedWith(
+        'Cannot be closed before close date or only by creator'
+      );
+      await timeTravel(2);
+      await expect(productions.connect(organizer2).close(id)).to.be.revertedWith(
+        'Cannot be closed before close date or only by creator'
+      );
+      await productions.connect(owner).close(id);
+    });
+
+    it('cannot close production directly on escrow', async () => {
+      // given
+      const totalTokens = 100;
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(totalTokens, 10n ** 6n)
+      );
+      await productions.connect(organizer).finishCrowdsale(id);
+      const escrow = await attachEscrow(productions, id);
+
+      // when
+      await expect(escrow.connect(organizer).close(organizer.address, true, organizer.address)).to.be.revertedWith(
+        'Ownable: caller is not the owner'
+      );
     });
   });
 });

@@ -171,11 +171,11 @@ contract StaxeProductionsV3 is
   }
 
   function finishCrowdsale(uint256 id) external override nonReentrant validProduction(id) {
-    productionEscrows[id].escrow.finish(_msgSender(), treasury);
+    productionEscrows[id].escrow.finish(_msgSender(), isTrustedForwarder(_msgSender()), treasury);
   }
 
   function close(uint256 id) external override nonReentrant validProduction(id) {
-    productionEscrows[id].escrow.close(_msgSender(), treasury);
+    productionEscrows[id].escrow.close(_msgSender(), isTrustedForwarder(_msgSender()), treasury);
   }
 
   function pause(uint256 id) external override nonReentrant validProduction(id) {
@@ -226,6 +226,8 @@ contract StaxeProductionsV3 is
     buyWithTransfer(id, amount, _msgSender(), buyer, perk);
   }
 
+  // ---- Proceeds and funds ----
+
   function depositProceedsInTokens(uint256 id, uint256 amount) external override nonReentrant validProduction(id) {
     IProductionEscrowV3.ProductionData memory productionData = productionEscrows[id].escrow.getProductionData();
     IERC20Upgradeable token = IERC20Upgradeable(productionData.currency);
@@ -252,10 +254,6 @@ contract StaxeProductionsV3 is
   function transferFunding(uint256 id) external override nonReentrant validProduction(id) {
     (uint256 amount, uint256 platformShare) = productionEscrows[id].escrow.transferFunding(_msgSender(), treasury);
     emit FundingClaimed(id, _msgSender(), amount, platformShare);
-  }
-
-  function finishProduction(uint256 id) external override nonReentrant validProduction(id) {
-    productionEscrows[id].escrow.finish(_msgSender(), treasury);
   }
 
   // ---- Utilities ----

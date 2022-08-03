@@ -82,6 +82,4 @@ interface IProductionsV3 {
   function transferProceeds(uint256 id) external;
 
   function transferFunding(uint256 id) external;
-
-  function finishProduction(uint256 id) external;
 }

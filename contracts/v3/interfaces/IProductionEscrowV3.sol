@@ -80,9 +80,17 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
 
   function decline(address decliner) external;
 
-  function finish(address caller, address platformTreasury) external;
+  function finish(
+    address caller,
+    bool isTrustedForwarder,
+    address platformTreasury
+  ) external;
 
-  function close(address caller, address platformTreasury) external;
+  function close(
+    address caller,
+    bool isTrustedForwarder,
+    address platformTreasury
+  ) external;
 
   function pause(address caller) external;
 
