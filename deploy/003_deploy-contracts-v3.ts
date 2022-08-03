@@ -46,7 +46,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract: 'StaxeMembersV3',
     from: deployer,
     log: logDeploy,
-    args: [],
+    args: [contract?.forwarder],
     proxy: {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {

@@ -4,24 +4,27 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/metatx/ERC2771ContextUpgradeable.sol";
 
 import "./interfaces/IMembersV3.sol";
 
 /// @custom:security-contact info@staxe.io
-contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
+contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpgradeable, IMembersV3 {
   bytes32 public constant INVESTOR_ROLE = keccak256("INVESTOR_ROLE");
   bytes32 public constant ORGANIZER_ROLE = keccak256("ORGANIZER_ROLE");
   bytes32 public constant APPROVER_ROLE = keccak256("APPROVER_ROLE");
 
   mapping(address => address) organizerDelegate;
+  address private immutable trustedForwarder;
 
   // ---- Events ----
 
   // ---- Functions ----
 
   /// @custom:oz-upgrades-unsafe-allow constructor
-  constructor() {
+  constructor(address _trustedForwarder) ERC2771ContextUpgradeable(_trustedForwarder) {
     _disableInitializers();
+    trustedForwarder = _trustedForwarder;
   }
 
   function initialize() public initializer {
@@ -30,6 +33,7 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
     _setupRole(INVESTOR_ROLE, _msgSender());
     _setupRole(ORGANIZER_ROLE, _msgSender());
     _setupRole(APPROVER_ROLE, _msgSender());
+    _grantRole(INVESTOR_ROLE, trustedForwarder);
   }
 
   function isOrganizer(address sender) external view override returns (bool) {
@@ -56,5 +60,20 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
   function removeDelegate(address delegate) external onlyRole(ORGANIZER_ROLE) {
     require(organizerDelegate[delegate] == _msgSender(), "Cannot remove delegate from someone else");
     organizerDelegate[delegate] = address(0);
+  }
+
+  function registerInvestor(address investor) external {
+    require(isTrustedForwarder(_msgSender()), "Can only be called from trusted forwarder");
+    _grantRole(INVESTOR_ROLE, investor);
+  }
+
+  // ---- Internal ----
+
+  function _msgSender() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (address sender) {
+    return ContextUpgradeable._msgSender();
+  }
+
+  function _msgData() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (bytes calldata) {
+    return ContextUpgradeable._msgData();
   }
 }
