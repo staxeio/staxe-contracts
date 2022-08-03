@@ -63,6 +63,9 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
 
       await productions.connect(investor1).transferProceeds(id);
       await productions.connect(investor2).transferProceeds(id);
+      await expect(productions.connect(organizer).transferProceeds(id)).to.be.revertedWith(
+        'Only investors can claim proceeds'
+      );
       const data3 = await productions.getTokenOwnerData(id, investor1.address);
       const data4 = await productions.getTokenOwnerData(id, investor2.address);
 

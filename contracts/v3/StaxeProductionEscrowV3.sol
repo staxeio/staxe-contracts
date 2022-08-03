@@ -235,6 +235,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     onlyOwner
     returns (uint256 payout)
   {
+    require(members.isInvestor(holder), "Only investors can claim proceeds");
     uint256 tokens = tokenContract.balanceOf(holder, productionData.id);
     payout = ((tokens * proceedsEarned) / productionData.soldCounter) - payoutPerTokenTracking[holder];
     payoutPerTokenHolder[holder] += payout;
