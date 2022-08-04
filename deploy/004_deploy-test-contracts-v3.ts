@@ -2,7 +2,7 @@ import { deployments } from 'hardhat';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { getContract } from '../utils/deployment';
-import { PerkTrackerTest, StaxeProductionsFactoryV3 } from '../typechain';
+import { StaxeProductionsFactoryV3 } from '../typechain';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
