@@ -50,3 +50,5 @@ secrets.json
 
 # OpenZeppelin
 .openzeppelin/*-1337.json
+
+deployments/localhost
