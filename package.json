@@ -1,6 +1,6 @@
 {
   "name": "@staxe/staxe-contracts",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "license": "MIT",
   "scripts": {
     "build": "npx hardhat compile",
@@ -8,7 +8,7 @@
     "format": "npx prettier --write .",
     "contracts:clean": "npx hardhat clean",
     "contracts:compile": "npx hardhat compile",
-    "contracts:develop": "npx hardhat node --watch --tags develop",
+    "contracts:develop": "npx hardhat node --watch --tags v3",
     "contracts:test": "npx hardhat test",
     "contracts:coverage": "npx hardhat coverage",
     "deploy:rinkeby": "npx hardhat deploy --network rinkeby --tags test",

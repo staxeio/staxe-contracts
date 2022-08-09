@@ -3,9 +3,11 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IPerkTrackerV3.sol";
+import "./interfaces/IPriceCalculationEngineV3.sol";
 import "./interfaces/IProductionsV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
 import "./StaxeProductionEscrowV3.sol";
@@ -39,10 +41,16 @@ contract StaxeProductionsFactoryV3 {
   // ----- State -----
   IProductionsV3 private productions;
   IMembersV3 private members;
+  IPriceCalculationEngineV3 private priceCalculationEngine;
 
-  constructor(IProductionsV3 _productions, IMembersV3 _members) {
+  constructor(
+    IProductionsV3 _productions,
+    IMembersV3 _members,
+    IPriceCalculationEngineV3 _priceCalculationEngine
+  ) {
     productions = _productions;
     members = _members;
+    priceCalculationEngine = _priceCalculationEngine;
   }
 
   // ----- Functions -----
@@ -71,7 +79,8 @@ contract StaxeProductionsFactoryV3 {
       crowdsaleEndDate: data.crowdsaleEndDate,
       productionEndDate: data.productionEndDate,
       platformSharePercentage: data.platformSharePercentage,
-      perkTracker: IPerkTrackerV3(data.perkTracker)
+      perkTracker: IPerkTrackerV3(data.perkTracker),
+      priceCalculationEngine: IPriceCalculationEngineV3(priceCalculationEngine)
     });
     StaxeProductionEscrowV3 escrow = new StaxeProductionEscrowV3(productionData, perks, data.tokenPrice, members);
     escrow.transferOwnership(address(productions));

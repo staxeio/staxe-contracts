@@ -35,6 +35,8 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   mapping(address => uint256) payoutPerTokenHolder;
   mapping(address => uint256) private payoutPerTokenTracking;
 
+  bool public refundable;
+
   // --- Functions ---
 
   constructor(
@@ -57,7 +59,10 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   }
 
   modifier creatorOnly(address caller) {
-    require(isCreatorOrDelegate(caller), "Can only be called from creator or delegate");
+    require(
+      isCreatorOrDelegate(caller) || (refundable && members.isApprover(caller)),
+      "Can only be called from creator or delegate"
+    );
     _;
   }
 
@@ -84,9 +89,8 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return productionData.totalSupply - productionData.soldCounter;
   }
 
-  function getTokenPrice(uint256 amount, address) external view override returns (IERC20Upgradeable, uint256) {
-    require(amount <= productionData.totalSupply - productionData.soldCounter, "");
-    return (productionData.currency, amount * tokenPrice);
+  function getTokenPrice(uint256 amount, address buyer) external view override returns (IERC20Upgradeable, uint256) {
+    return productionData.priceCalculationEngine.calculateTokenPrice(this, productionData, tokenPrice, amount, buyer);
   }
 
   function getTokenOwnerData(address tokenOwner)
@@ -111,7 +115,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
       perksOwned[i] = Perk({id: id, total: perk.total, claimed: count, minTokensRequired: perk.minTokensRequired});
     }
     proceedsClaimed = payoutPerTokenHolder[tokenOwner];
-    proceedsAvailable = ((balance * proceedsEarned) / productionData.soldCounter) - payoutPerTokenTracking[tokenOwner];
+    proceedsAvailable = productionData.soldCounter > 0
+      ? ((balance * proceedsEarned) / productionData.soldCounter) - payoutPerTokenTracking[tokenOwner]
+      : 0;
     return (balance, perksOwned, proceedsClaimed, proceedsAvailable);
   }
 
@@ -189,6 +195,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     emit StateChanged(ProductionState.OPEN, ProductionState.FINISHED, caller);
     productionData.state = ProductionState.FINISHED;
     productionData.productionEndDate = newCloseDate;
+    refundable = true;
     IERC20Upgradeable currency = IERC20Upgradeable(productionData.currency);
     uint256 balance = currency.balanceOf(address(this));
     proceedsEarned += balance;

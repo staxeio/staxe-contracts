@@ -75,12 +75,20 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     `StaxeProductionsV3 deployed to ${productionsDeployment.address} with treasury=${treasuryByChainId}, forwarder=${contract?.forwarder}`
   );
 
-  // ----- Escrow Factory
+  // ----- Escrow Factory with Calculation Engine
+  const calculationEngineDeployment = await deploy('StaticPriceCalculationEngine', {
+    contract: 'StaticPriceCalculationEngine',
+    from: deployer,
+    log: logDeploy,
+    args: [],
+  });
+  log(`StaticPriceCalculationEngine deployed to ${calculationEngineDeployment.address}`);
+
   const factoryDeployment = await deploy('StaxeProductionsFactoryV3', {
     contract: 'StaxeProductionsFactoryV3',
     from: deployer,
     log: logDeploy,
-    args: [productionsDeployment.address, membersDeployment.address],
+    args: [productionsDeployment.address, membersDeployment.address, calculationEngineDeployment.address],
   });
   log(`StaxeProductionsFactoryV3 deployed to ${factoryDeployment.address}`);
 

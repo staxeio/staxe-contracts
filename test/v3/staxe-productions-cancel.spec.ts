@@ -107,6 +107,35 @@ describe('StaxeProductionsV3: cancel production', () => {
       expect(productionData.data.state).to.be.equal(3);
       expect(investorData.proceedsAvailable.toBigInt()).to.be.equal(price[1].toBigInt());
     });
+
+    it('should allow refuding over proceeds for organizer and approver', async () => {
+      // given
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n)
+      );
+      const tokensToBuy = 50;
+      const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+      await productions
+        .connect(investor1)
+        .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 0, { value: swapPrice * 2n });
+      await productions.connect(organizer).transferFunding(id);
+      const timeToClose = await timeStampPlusDays(31);
+      await productions.connect(approver).pause(id);
+      await productions.connect(approver).cancel(id, timeToClose);
+      const investorDataBefore = await productions.connect(investor1).getTokenOwnerData(id, investor1.address);
+
+      // when
+      await productions.connect(approver).depositProceedsInCurrency(id, { value: 10n ** 18n });
+      await productions.connect(organizer).depositProceedsInCurrency(id, { value: 10n ** 18n });
+
+      // then
+      const investorData = await productions.connect(investor1).getTokenOwnerData(id, investor1.address);
+      expect(investorDataBefore.proceedsAvailable.toNumber()).to.be.equal(0);
+      expect(investorData.proceedsAvailable.toNumber()).to.be.greaterThan(0);
+    });
   });
 
   // --------------------------- SECURITY CHECKS ---------------------------
