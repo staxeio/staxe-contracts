@@ -93,7 +93,10 @@ contract StaxeProductionsV3 is
 
   // ---- Data Access ----
 
-  function getProduction(uint256 id) external view validProduction(id) returns (Production memory) {
+  function getProduction(uint256 id) external view returns (Production memory) {
+    if (productionEscrows[id].id == 0) {
+      return emptyProduction(id);
+    }
     (
       IProductionEscrowV3.ProductionData memory data,
       IProductionEscrowV3.Perk[] memory perks,
@@ -350,5 +353,33 @@ contract StaxeProductionsV3 is
     token.safeTransferFrom(tokenHolder, address(this), price);
     token.safeTransfer(address(escrow), price);
     escrow.buyTokens(buyer, amount, price, perk);
+  }
+
+  function emptyProduction(uint256 id) private pure returns (Production memory) {
+    return
+      Production({
+        id: id,
+        data: IProductionEscrowV3.ProductionData({
+          id: id,
+          creator: address(0),
+          totalSupply: 0,
+          organizerTokens: 0,
+          soldCounter: 0,
+          maxTokensUnknownBuyer: 0,
+          currency: IERC20Upgradeable(address(0)),
+          state: IProductionEscrowV3.ProductionState.EMPTY,
+          dataHash: "",
+          crowdsaleEndDate: 0,
+          productionEndDate: 0,
+          platformSharePercentage: 0,
+          perkTracker: IPerkTrackerV3(address(0)),
+          priceCalculationEngine: IPriceCalculationEngineV3(address(0))
+        }),
+        perks: new IProductionEscrowV3.Perk[](0),
+        escrow: IProductionEscrowV3(address(0)),
+        fundsRaised: 0,
+        escrowBalance: 0,
+        paused: false
+      });
   }
 }

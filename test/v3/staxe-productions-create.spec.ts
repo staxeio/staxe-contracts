@@ -183,5 +183,17 @@ describe('StaxeProductionsV3: create productions', () => {
         productions.connect(organizer).mintProduction(organizer.address, organizer.address, 100)
       ).to.be.revertedWith('Untrusted Escrow Factory');
     });
+
+    it('returns empty production for non-existing id', async () => {
+      // givne
+      const doesNotExist = 9999999;
+
+      // when
+      const empty = await productions.getProduction(doesNotExist);
+
+      // then
+      expect(empty.id).to.be.equal(doesNotExist);
+      expect(empty.data.state).to.be.equal(0);
+    });
   });
 });
