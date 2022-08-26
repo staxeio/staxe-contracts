@@ -14,10 +14,10 @@ import { USDT } from '../../utils/swap';
 import { buyToken, getQuote } from './uniswap';
 import { getContract } from '../../utils/deployment';
 
-export const harness = async () => {
+export const harness = async (fixture = ['v3']) => {
   const [owner, organizer, approver, investor1, investor2, treasury, delegate, organizer2, ...addresses] =
     await ethers.getSigners();
-  await deployments.fixture(['v3']);
+  await deployments.fixture(fixture);
 
   const members = (await getContract('StaxeMembersV3')) as StaxeMembersV3;
   const token = (await getContract('StaxeProductionTokenV3')) as StaxeProductionTokenV3;
