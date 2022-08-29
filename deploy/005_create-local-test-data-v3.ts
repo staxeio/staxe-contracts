@@ -11,7 +11,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { factory, productions, approver, organizer } = await harness();
 
-  const production = newProduction(100, 1n * 10n ** 18n, [
+  const production = newProduction(100, 1n * 10n ** 6n, [
     { minTokensRequired: 1, total: 10 },
     { minTokensRequired: 5, total: 5 },
     { minTokensRequired: 10, total: 1 },
