@@ -1,7 +1,8 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { harness, newProduction } from '../test/utils/harness';
-import { getQuote } from '../test/utils/uniswap';
+import { buyToken, getQuote } from '../test/utils/uniswap';
+import { ethers } from 'hardhat';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const chainId = +(await hre.getChainId());
@@ -10,7 +11,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     return;
   }
 
-  const { factory, productions, approver, investor1, organizer } = await harness();
+  const { factory, productions, owner, approver, investor1, organizer } = await harness();
 
   const production = newProduction(100, 1n * 10n ** 6n, [
     { minTokensRequired: 1, total: 10 },
@@ -32,6 +33,10 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 3, { value: swapPrice });
   await tx2.wait();
   console.log(`Investor ${investor1.address} bought ${tokensToBuy} tokens`);
+
+  const priceAll = await productions.connect(owner).getTokenPrice(id, 100);
+  const swapPriceAll = await getQuote(priceAll[0], priceAll[1].toBigInt(), 1337);
+  await buyToken(priceAll[0], priceAll[1].toBigInt(), swapPriceAll, owner);
 };
 
 module.exports = main;
