@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { harness, newProduction } from '../test/utils/harness';
 import { buyToken, getQuote } from '../test/utils/uniswap';
-import { ethers } from 'hardhat';
+import { DAI } from '../utils/swap';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const chainId = +(await hre.getChainId());
@@ -13,11 +13,18 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { factory, productions, owner, approver, investor1, organizer } = await harness();
 
-  const production = newProduction(100, 1n * 10n ** 6n, [
-    { minTokensRequired: 1, total: 10 },
-    { minTokensRequired: 5, total: 5 },
-    { minTokensRequired: 10, total: 1 },
-  ]);
+  const production = newProduction(
+    100,
+    // 1n * 10n ** 6n, // USDT
+    1n * 10n ** 18n, // DAI
+    [
+      { minTokensRequired: 1, total: 10 },
+      { minTokensRequired: 5, total: 5 },
+      { minTokensRequired: 10, total: 1 },
+    ],
+    0,
+    DAI(chainId)
+  );
 
   const tx = await factory.connect(organizer).createProduction(production);
   const confirmed = await tx.wait();

@@ -66,6 +66,10 @@ const config: HardhatUserConfig = {
       url: `https://kovan.infura.io/v3/${infuraProjectId}`,
       accounts: [`0x${networkConfig?.kovan?.privateKey}`],
     },
+    goerli: {
+      url: `https://eth-goerli.g.alchemy.com/v2/${networkConfig?.goerli?.alchemyApiKey}`,
+      accounts: [`0x${networkConfig?.goerli?.privateKey}`],
+    },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${infuraProjectId}`,
       accounts: [`0x${networkConfig?.mainnet?.privateKey}`],

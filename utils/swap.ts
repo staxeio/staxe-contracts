@@ -35,7 +35,7 @@ export const DAI = (chain: number) => {
     case 4:
       return '0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D'; // rinkeby
     case 5:
-      return '0x6B175474E89094C44Da98b954EedeAC495271d0F'; // goerli
+      return '0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844'; // goerli
     case 42:
       return '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa'; // kovan
     case 137:
