@@ -79,10 +79,11 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     returns (
       ProductionData memory,
       Perk[] memory,
+      uint256,
       uint256
     )
   {
-    return (productionData, perks, fundsRaised);
+    return (productionData, perks, fundsRaised, proceedsEarned);
   }
 
   function getTokensAvailable() external view hasState(ProductionState.OPEN) returns (uint256) {

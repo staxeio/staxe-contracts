@@ -100,7 +100,8 @@ contract StaxeProductionsV3 is
     (
       IProductionEscrowV3.ProductionData memory data,
       IProductionEscrowV3.Perk[] memory perks,
-      uint256 fundsRaised
+      uint256 fundsRaised,
+      uint256 proceedsEarned
     ) = productionEscrows[id].escrow.getProductionDataWithPerks();
     uint256 balance = IERC20Upgradeable(data.currency).balanceOf(address(productionEscrows[id].escrow));
     bool paused = productionEscrows[id].escrow.paused();
@@ -111,6 +112,7 @@ contract StaxeProductionsV3 is
         perks: perks,
         escrow: productionEscrows[id].escrow,
         fundsRaised: fundsRaised,
+        proceedsEarned: proceedsEarned,
         escrowBalance: balance,
         paused: paused
       });
@@ -378,6 +380,7 @@ contract StaxeProductionsV3 is
         perks: new IProductionEscrowV3.Perk[](0),
         escrow: IProductionEscrowV3(address(0)),
         fundsRaised: 0,
+        proceedsEarned: 0,
         escrowBalance: 0,
         paused: false
       });

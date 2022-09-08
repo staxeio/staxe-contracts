@@ -61,7 +61,8 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
     returns (
       ProductionData memory,
       Perk[] memory,
-      uint256
+      uint256 fundsRaised,
+      uint256 proceedsEarned
     );
 
   function getTokenOwnerData(address tokenOwner)

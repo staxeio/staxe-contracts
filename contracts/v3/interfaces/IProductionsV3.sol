@@ -22,6 +22,7 @@ interface IProductionsV3 {
     IProductionEscrowV3.Perk[] perks;
     IProductionEscrowV3 escrow;
     uint256 fundsRaised;
+    uint256 proceedsEarned;
     uint256 escrowBalance;
     bool paused;
   }
