@@ -41,6 +41,17 @@ interface IProductionsV3 {
     address buyer
   ) external view returns (IERC20Upgradeable, uint256);
 
+  function getTokenOwnerData(uint256 id, address tokenOwner)
+    external
+    view
+    returns (
+      uint256 balance,
+      IProductionEscrowV3.Purchase[] memory purchases,
+      IProductionEscrowV3.Perk[] memory perksOwned,
+      uint256 proceedsClaimed,
+      uint256 proceedsAvailable
+    );
+
   function approve(uint256 id) external;
 
   function decline(uint256 id) external;

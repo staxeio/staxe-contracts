@@ -26,6 +26,11 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
     uint256 minTokensRequired;
   }
 
+  struct Purchase {
+    uint256 tokens;
+    uint256 price;
+  }
+
   struct ProductionData {
     uint256 id;
     address creator;
@@ -70,6 +75,7 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
     view
     returns (
       uint256 balance,
+      Purchase[] memory purchases,
       Perk[] memory perks,
       uint256 proceedsClaimed,
       uint256 proceedsAvailable

@@ -139,10 +139,12 @@ contract StaxeProductionsV3 is
   function getTokenOwnerData(uint256 id, address tokenOwner)
     external
     view
+    override
     validProduction(id)
     validBuyer(tokenOwner)
     returns (
       uint256 balance,
+      IProductionEscrowV3.Purchase[] memory purchases,
       IProductionEscrowV3.Perk[] memory perksOwned,
       uint256 proceedsClaimed,
       uint256 proceedsAvailable

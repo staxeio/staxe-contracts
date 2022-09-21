@@ -34,6 +34,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   uint256 public proceedsEarned;
   mapping(address => uint256) payoutPerTokenHolder;
   mapping(address => uint256) private payoutPerTokenTracking;
+  mapping(address => Purchase[]) private purchasesByBuyer;
 
   bool public refundable;
 
@@ -100,6 +101,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     override
     returns (
       uint256 balance,
+      Purchase[] memory purchases,
       Perk[] memory perksOwned,
       uint256 proceedsClaimed,
       uint256 proceedsAvailable
@@ -119,7 +121,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     proceedsAvailable = productionData.soldCounter > 0
       ? ((balance * proceedsEarned) / productionData.soldCounter) - payoutPerTokenTracking[tokenOwner]
       : 0;
-    return (balance, perksOwned, proceedsClaimed, proceedsAvailable);
+    return (balance, purchasesByBuyer[tokenOwner], perksOwned, proceedsClaimed, proceedsAvailable);
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -223,6 +225,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     emit TokenBought(buyer, amount, price, perkId);
     productionData.soldCounter += amount;
     tokenContract.safeTransferFrom(address(this), buyer, productionData.id, amount, "");
+    purchasesByBuyer[buyer].push(Purchase(amount, price));
   }
 
   function depositProceeds(address caller, uint256 amount)

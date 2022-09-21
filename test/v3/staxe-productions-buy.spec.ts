@@ -308,12 +308,15 @@ describe('StaxeProductionsV3: buy tokens', () => {
         .withArgs(investor1.address, id, 3, tokensToBuy);
 
       // then
-      const { balance, perksOwned } = await productions.getTokenOwnerData(id, investor1.address);
+      const { balance, perksOwned, purchases } = await productions.getTokenOwnerData(id, investor1.address);
       expect(balance.toBigInt()).to.be.equal(10n);
       expect(perksOwned.length).to.be.equal(1);
       expect(perksOwned[0].id).to.be.equal(3);
       expect(perksOwned[0].claimed).to.be.equal(1);
       expect(perksOwned[0].minTokensRequired.toBigInt()).to.be.equal(10n);
+      expect(purchases.length).to.be.equal(1);
+      expect(purchases[0].tokens).to.be.equal(tokensToBuy);
+      expect(purchases[0].price).to.be.equal(price[1]);
     });
 
     it('buys tokens with multiple perks', async () => {
