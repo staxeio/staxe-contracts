@@ -50,6 +50,15 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const priceAll = await productions.connect(owner).getTokenPrice(id, 100);
   const swapPriceAll = await getQuote(priceAll[0], priceAll[1].toBigInt(), 1337);
   await buyToken(priceAll[0], priceAll[1].toBigInt(), swapPriceAll, owner);
+
+  // Enable to test proceeds:
+  /* 
+  const priceProceeds = await productions.connect(organizer).getTokenPrice(id, 200);
+  const swapPriceProceeds = await getQuote(priceProceeds[0], priceProceeds[1].toBigInt(), 1337);
+
+  await productions.connect(organizer).finishCrowdsale(id);
+  await productions.connect(organizer).depositProceedsInCurrency(id, { value: swapPriceProceeds });
+  */
 };
 
 module.exports = main;

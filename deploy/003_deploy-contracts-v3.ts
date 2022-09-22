@@ -16,7 +16,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const chainId = +(await hre.getChainId());
   const contract = deploymentSettings.contracts.filter((contract) => contract.chainId === chainId)[0];
   const treasuryByChainId = contract?.treasury || treasury?.address;
-  const logDeploy = chainId !== 1337 || true;
+  const logDeploy = true;
   log(`Deploying to chainId=${chainId} with treasury=${treasuryByChainId}`);
 
   const wethAddress = WETH(chainId);
