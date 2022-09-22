@@ -38,7 +38,7 @@ contract StaxeProductionTokenV3 is
   }
 
   function initialize() public initializer {
-    __ERC1155_init("https://staxe.app/api/v3/tokens/{id}");
+    __ERC1155_init("https://staxe.io/api/v3/tokens/{id}");
     __AccessControl_init();
     __Pausable_init();
 
