@@ -5,10 +5,10 @@
       "name": "goerli",
       "treasury": "0x3751D63E364824463E98B33F626566389fB703C4",
       "forwarder": "0xf23f3f8408507b4db8dfda9748ca5c8b5e944649",
-      "token": "0x173c98db45E865201EdB2BE02Cb98c52086524B7",
-      "members": "0xF72763B4b7ED9610CB4A40E92C9ca397c72F4797",
-      "productions": "0x69971B910AaEE565D9454bDA6EFc03D6539711B3",
-      "factory": "0x4871ed8199112064b76Da54916FfB6bF14A4B90b",
+      "token": "0x5C59298F126E03CaAB60ed93A3e3182910d502bE",
+      "members": "0xb87C97018a0A45Fee145e85D7E79c77E5242023c",
+      "productions": "0x6CE6AE6Ff8d4c576d8BA3dc6135f1Ee3827336DE",
+      "factory": "0x2Ae80C2CbCDE0F777BFbdd2E2b7474d83B2b3383",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
@@ -27,10 +27,10 @@
       "name": "hardhat",
       "treasury": "0x47d99A63D7135E30b626209FEeabB91cF464A905",
       "forwarder": "0x47d99A63D7135E30b626209FEeabB91cF464A905",
-      "token": "0x697AD5edAccBd3f9eE45C2Eb73122c9165DcD641",
-      "members": "0xE6E191aF3F605C391697FE92b04710A4509C0168",
-      "productions": "0x4B581026EbdCDAeE4c1327E412E96E312C8b75E2",
-      "factory": "0xf525C00cd82233a57A5AbB5EA2dad5849a32e133",
+      "token": "0x21fecD7cE8A528f864e4cA0d0CEA51b2EBD15f79",
+      "members": "0x4Ef9fd1397A1eC6EF62266E0A2CA7E8950790E9a",
+      "productions": "0x46d12EF82E8DFFc4Aa1b6D0d844162d6e88F56a3",
+      "factory": "0xDf41b7cbE8f8c6F776fbbF56C7c2e3CadFF428A9",
       "owner": "0x47d99A63D7135E30b626209FEeabB91cF464A905"
     }
   ]

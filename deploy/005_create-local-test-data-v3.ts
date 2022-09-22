@@ -3,6 +3,7 @@ import { DeployFunction } from 'hardhat-deploy/types';
 import { harness, newProduction } from '../test/utils/harness';
 import { buyToken, getQuote } from '../test/utils/uniswap';
 import { DAI } from '../utils/swap';
+import { BigNumber } from 'ethers';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const chainId = +(await hre.getChainId());
@@ -40,6 +41,11 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     .buyTokensWithCurrency(id, investor1.address, tokensToBuy, 3, { value: swapPrice });
   await tx2.wait();
   console.log(`Investor ${investor1.address} bought ${tokensToBuy} tokens`);
+
+  await investor1.sendTransaction({
+    to: '0xef5c870723Af027274a09610546ffC55D6eB117f',
+    value: BigNumber.from('100000000000000000000'),
+  });
 
   const priceAll = await productions.connect(owner).getTokenPrice(id, 100);
   const swapPriceAll = await getQuote(priceAll[0], priceAll[1].toBigInt(), 1337);

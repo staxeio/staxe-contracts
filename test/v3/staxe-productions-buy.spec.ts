@@ -510,5 +510,24 @@ describe('StaxeProductionsV3: buy tokens', () => {
         productions.connect(approver).buyTokensWithTokens(id, buyer.address, tokensToBuy, 0)
       ).to.be.revertedWith('Needs investor role to buy amount of tokens');
     });
+
+    it('can buy unlimited tokens for non-investor buyer if limit = 0', async () => {
+      // given
+      const maxTokensUnknownBuyer = 0;
+      const id = await createAndApproveProduction(
+        factory.connect(organizer),
+        productions.connect(approver),
+        newProduction(100, 10n ** 6n, [], maxTokensUnknownBuyer)
+      );
+      const buyer = approver;
+      const tokensToBuy = maxTokensUnknownBuyer + 10;
+      const price = await productions.connect(buyer).getTokenPrice(id, tokensToBuy);
+      const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
+      await buyToken(price[0], price[1].toBigInt(), swapPrice, buyer);
+
+      // when
+      await (await attachToken(price[0])).connect(buyer).approve(productions.address, price[1]);
+      await productions.connect(approver).buyTokensWithTokens(id, buyer.address, tokensToBuy, 0);
+    });
   });
 });

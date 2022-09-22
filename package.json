@@ -8,11 +8,10 @@
     "format": "npx prettier --write .",
     "contracts:clean": "npx hardhat clean",
     "contracts:compile": "npx hardhat compile",
-    "contracts:develop": "npx hardhat node --watch --tags ui",
+    "contracts:develop": "npx hardhat node --watch --tags ui,v3",
     "contracts:test": "npx hardhat test",
     "contracts:coverage": "npx hardhat coverage",
-    "deploy:rinkeby": "npx hardhat deploy --network rinkeby --tags test",
-    "deploy:kovan": "npx hardhat deploy --network kovan --tags test",
+    "deploy:goerli": "npx hardhat deploy --network goerli --tags test",
     "deploy:mumbai": "npx hardhat deploy --network mumbai --tags test",
     "deploy:matic": "npx hardhat deploy --network matic --tags prod"
   },

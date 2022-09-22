@@ -217,7 +217,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   ) external override hasState(ProductionState.OPEN) whenNotPaused onlyOwner {
     require(amount <= productionData.totalSupply - productionData.soldCounter, "Not enough tokens available");
     require(
-      members.isInvestor(buyer) || amount <= productionData.maxTokensUnknownBuyer,
+      members.isInvestor(buyer) ||
+        amount <= productionData.maxTokensUnknownBuyer ||
+        productionData.maxTokensUnknownBuyer == 0,
       "Needs investor role to buy amount of tokens"
     );
     claimPerk(buyer, amount, perkId);
