@@ -32,8 +32,13 @@ describe('StaxeProductionsV3: create productions', () => {
 
       // when
       await expect(factory.connect(organizer).createProduction(production)).to.emit(factory, 'ProductionCreated');
+
+      // then
       const created = await productions.getProduction(1);
       expect(await token.balanceOf(created.escrow, 1)).to.equal(production.totalSupply);
+      const ids = await productions.getProductionIdsByCreator(organizer.address);
+      expect(ids.length).to.be.equal(1);
+      expect(ids[0]).to.be.equal(1);
     });
 
     it('creates a new production for organizer with organizer tokens', async () => {

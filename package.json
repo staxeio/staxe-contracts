@@ -8,7 +8,7 @@
     "format": "npx prettier --write .",
     "contracts:clean": "npx hardhat clean",
     "contracts:compile": "npx hardhat compile",
-    "contracts:develop": "npx hardhat node --watch --tags ui,v3",
+    "contracts:develop": "npx hardhat node --watch --tags ui",
     "contracts:test": "npx hardhat test",
     "contracts:coverage": "npx hardhat coverage",
     "deploy:goerli": "npx hardhat deploy --network goerli --tags test",

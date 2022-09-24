@@ -43,6 +43,7 @@ contract StaxeProductionsV3 is
   ISwapRouter public constant router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
   mapping(uint256 => Escrow) public productionEscrows;
+  mapping(address => uint256[]) public productionIdsByOwner;
   IProductionTokenV3 public productionToken;
   IMembersV3 public members;
   address public treasury;
@@ -153,6 +154,10 @@ contract StaxeProductionsV3 is
     return productionEscrows[id].escrow.getTokenOwnerData(tokenOwner);
   }
 
+  function getProductionIdsByCreator(address creator) external view override returns (uint256[] memory) {
+    return productionIdsByOwner[creator];
+  }
+
   // ---- Lifecycle ----
 
   function mintProduction(
@@ -167,6 +172,7 @@ contract StaxeProductionsV3 is
     productionEscrows[id] = Escrow({id: id, escrow: escrow});
     tokenIds.increment();
     productionToken.mintToken(IProductionTokenTrackerV3(escrow), id, totalAmount);
+    productionIdsByOwner[creator].push(id);
   }
 
   function approve(uint256 id) external override nonReentrant validProduction(id) {

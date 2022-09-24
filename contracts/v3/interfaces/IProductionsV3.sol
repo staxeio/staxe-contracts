@@ -52,6 +52,8 @@ interface IProductionsV3 {
       uint256 proceedsAvailable
     );
 
+  function getProductionIdsByCreator(address creator) external view returns (uint256[] memory);
+
   function approve(uint256 id) external;
 
   function decline(uint256 id) external;

@@ -27,10 +27,10 @@
       "name": "hardhat",
       "treasury": "0x47d99A63D7135E30b626209FEeabB91cF464A905",
       "forwarder": "0x47d99A63D7135E30b626209FEeabB91cF464A905",
-      "token": "0x21fecD7cE8A528f864e4cA0d0CEA51b2EBD15f79",
-      "members": "0x4Ef9fd1397A1eC6EF62266E0A2CA7E8950790E9a",
-      "productions": "0x46d12EF82E8DFFc4Aa1b6D0d844162d6e88F56a3",
-      "factory": "0xDf41b7cbE8f8c6F776fbbF56C7c2e3CadFF428A9",
+      "token": "0x697AD5edAccBd3f9eE45C2Eb73122c9165DcD641",
+      "members": "0xE6E191aF3F605C391697FE92b04710A4509C0168",
+      "productions": "0x4B581026EbdCDAeE4c1327E412E96E312C8b75E2",
+      "factory": "0xf525C00cd82233a57A5AbB5EA2dad5849a32e133",
       "owner": "0x47d99A63D7135E30b626209FEeabB91cF464A905"
     }
   ]
