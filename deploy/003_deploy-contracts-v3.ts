@@ -51,7 +51,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
         methodName: 'initialize',
-        args: [],
+        args: [treasuryByChainId],
       },
     },
   });

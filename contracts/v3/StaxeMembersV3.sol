@@ -27,13 +27,14 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpg
     trustedForwarder = _trustedForwarder;
   }
 
-  function initialize() public initializer {
+  function initialize(address treasury) public initializer {
     __AccessControlEnumerable_init();
     _setupRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, _msgSender());
     _setupRole(INVESTOR_ROLE, _msgSender());
     _setupRole(ORGANIZER_ROLE, _msgSender());
     _setupRole(APPROVER_ROLE, _msgSender());
     _grantRole(INVESTOR_ROLE, trustedForwarder);
+    _grantRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, treasury);
   }
 
   function isOrganizer(address sender) external view override returns (bool) {
