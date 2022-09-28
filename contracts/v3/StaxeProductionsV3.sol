@@ -94,7 +94,7 @@ contract StaxeProductionsV3 is
 
   // ---- Data Access ----
 
-  function getProduction(uint256 id) external view returns (Production memory) {
+  function getProduction(uint256 id) external view override returns (Production memory) {
     if (productionEscrows[id].id == 0) {
       return emptyProduction(id);
     }
@@ -292,11 +292,11 @@ contract StaxeProductionsV3 is
   // ---- Internal ----
 
   function _msgSender() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (address sender) {
-    return ContextUpgradeable._msgSender();
+    return ERC2771ContextUpgradeable._msgSender();
   }
 
   function _msgData() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (bytes calldata) {
-    return ContextUpgradeable._msgData();
+    return ERC2771ContextUpgradeable._msgData();
   }
 
   // ---- Private ----

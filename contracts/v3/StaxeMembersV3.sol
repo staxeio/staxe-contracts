@@ -71,10 +71,10 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpg
   // ---- Internal ----
 
   function _msgSender() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (address sender) {
-    return ContextUpgradeable._msgSender();
+    return ERC2771ContextUpgradeable._msgSender();
   }
 
   function _msgData() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (bytes calldata) {
-    return ContextUpgradeable._msgData();
+    return ERC2771ContextUpgradeable._msgData();
   }
 }

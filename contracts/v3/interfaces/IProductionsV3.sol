@@ -33,6 +33,8 @@ interface IProductionsV3 {
     uint256 totalAmount
   ) external returns (uint256 id);
 
+  function getProduction(uint256 id) external view returns (Production memory);
+
   function getTokenPrice(uint256 id, uint256 amount) external view returns (IERC20Upgradeable, uint256);
 
   function getTokenPriceFor(
