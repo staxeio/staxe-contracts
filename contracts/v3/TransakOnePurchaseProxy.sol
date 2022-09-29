@@ -37,19 +37,16 @@ contract TransakOnePurchaseProxy is OwnableUpgradeable, ERC2771ContextUpgradeabl
   // ---- Functions ----
 
   function placePurchase(
-    address buyer,
     uint256 tokenId,
     uint256 numTokens,
     uint16 perkId
   ) external {
-    require(isTrustedForwarder(_msgSender()), "Must be called by forwarder");
     require(
       productions.getProduction(tokenId).data.state != IProductionEscrowV3.ProductionState.EMPTY,
       "Production does not exist"
     );
-    require(buyer != address(0), "Invalid buyer");
     require(numTokens != 0, "Invalid token number to buy");
-    purchases[buyer] = Purchase({tokenId: tokenId, numTokens: numTokens, perkId: perkId});
+    purchases[_msgSender()] = Purchase({tokenId: tokenId, numTokens: numTokens, perkId: perkId});
   }
 
   function depositTo(

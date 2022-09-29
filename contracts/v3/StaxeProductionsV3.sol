@@ -62,15 +62,12 @@ contract StaxeProductionsV3 is
 
   modifier validBuyer(address buyer) {
     require(buyer != address(0), "Buyer must be valid address");
-    require(
-      buyer == _msgSender() || isTrustedForwarder(_msgSender()) || members.isInvestor(_msgSender()),
-      "Invalid token buyer"
-    );
+    require(buyer == _msgSender() || members.isInvestor(_msgSender()), "Invalid token buyer");
     _;
   }
 
   modifier trustedOnly() {
-    require(isTrustedForwarder(_msgSender()), "Can only be called from trusted forwarder");
+    require(isTrustedForwarder(msg.sender), "Can only be called from trusted forwarder");
     _;
   }
 
@@ -184,11 +181,11 @@ contract StaxeProductionsV3 is
   }
 
   function finishCrowdsale(uint256 id) external override nonReentrant validProduction(id) {
-    productionEscrows[id].escrow.finish(_msgSender(), isTrustedForwarder(_msgSender()), treasury);
+    productionEscrows[id].escrow.finish(_msgSender(), isTrustedForwarder(msg.sender), treasury);
   }
 
   function close(uint256 id) external override nonReentrant validProduction(id) {
-    productionEscrows[id].escrow.close(_msgSender(), isTrustedForwarder(_msgSender()), treasury);
+    productionEscrows[id].escrow.close(_msgSender(), isTrustedForwarder(msg.sender), treasury);
   }
 
   function pause(uint256 id) external override nonReentrant validProduction(id) {
@@ -235,7 +232,7 @@ contract StaxeProductionsV3 is
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external override nonReentrant validProduction(id) validBuyer(buyer) trustedOnly {
+  ) external override nonReentrant validProduction(id) trustedOnly {
     buyWithTransfer(id, amount, _msgSender(), buyer, perk);
   }
 

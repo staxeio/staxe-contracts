@@ -1,7 +1,9 @@
 import { expect } from 'chai';
-import { StaxeMembersV3 } from '../../typechain';
+import { MinimalForwarder, StaxeMembersV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { harness } from '../utils/harness';
+import { getContract } from '../../utils/deployment';
+import { signMetaTxRequest } from '../../utils/signer';
 
 describe('StaxeMembersV3: roles', () => {
   // contracts
@@ -58,7 +60,15 @@ describe('StaxeMembersV3: roles', () => {
     it('adds investor role when trusted forwarder', async () => {
       // when
       const isInvestorBefore = await members.isInvestor(delegate.address);
-      await members.connect(owner).registerInvestor(delegate.address);
+      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
+      const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
+        from: owner.address,
+        to: members.address,
+        data: members.interface.encodeFunctionData('registerInvestor', [delegate.address]),
+      });
+      const tx = await forwarder.execute(request, signature);
+      await tx.wait(1);
+
       const isInvestorAfter = await members.isInvestor(delegate.address);
 
       // then

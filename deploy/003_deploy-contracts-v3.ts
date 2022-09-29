@@ -25,6 +25,17 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // -------------------------------------- CONTRACT DEPLOYMENT --------------------------------------
 
+  let forwarder = contract?.forwarder;
+  if (chainId === 1337) {
+    const minimalForwarder = await deploy('MinimalForwarder', {
+      contract: 'MinimalForwarder',
+      from: deployer,
+      log: logDeploy,
+      args: [],
+    });
+    forwarder = minimalForwarder.address;
+  }
+
   // ----- Tokens
   const tokenDeployment = await deploy('StaxeProductionTokenV3', {
     contract: 'StaxeProductionTokenV3',
@@ -46,7 +57,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract: 'StaxeMembersV3',
     from: deployer,
     log: logDeploy,
-    args: [contract?.forwarder],
+    args: [forwarder],
     proxy: {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
@@ -62,7 +73,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract: 'StaxeProductionsV3',
     from: deployer,
     log: logDeploy,
-    args: [contract?.forwarder],
+    args: [forwarder],
     proxy: {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
@@ -72,7 +83,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     },
   });
   log(
-    `StaxeProductionsV3 deployed to ${productionsDeployment.address} with treasury=${treasuryByChainId}, forwarder=${contract?.forwarder}`
+    `StaxeProductionsV3 deployed to ${productionsDeployment.address} with treasury=${treasuryByChainId}, forwarder=${forwarder}`
   );
 
   // ----- Escrow Factory with Calculation Engine
@@ -121,6 +132,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract.productions = productionsDeployment.address;
     contract.factory = factoryDeployment.address;
     contract.owner = owner.address;
+    contract.forwarder = forwarder;
     const newContent = JSON.stringify(deploymentSettings, null, 2);
     await fs.writeFile(__dirname + '/../deployments/deployments-v3.json', newContent);
   }

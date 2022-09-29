@@ -8,6 +8,8 @@ import "@openzeppelin/contracts-upgradeable/metatx/ERC2771ContextUpgradeable.sol
 
 import "./interfaces/IMembersV3.sol";
 
+// import "hardhat/console.sol";
+
 /// @custom:security-contact info@staxe.io
 contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpgradeable, IMembersV3 {
   bytes32 public constant INVESTOR_ROLE = keccak256("INVESTOR_ROLE");
@@ -34,6 +36,7 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpg
     _setupRole(ORGANIZER_ROLE, _msgSender());
     _setupRole(APPROVER_ROLE, _msgSender());
     _grantRole(INVESTOR_ROLE, trustedForwarder);
+    _grantRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, trustedForwarder);
     _grantRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, treasury);
   }
 
@@ -64,7 +67,7 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpg
   }
 
   function registerInvestor(address investor) external {
-    require(isTrustedForwarder(_msgSender()), "Can only be called from trusted forwarder");
+    require(isTrustedForwarder(msg.sender), "Can only be called from trusted forwarder");
     _grantRole(INVESTOR_ROLE, investor);
   }
 
