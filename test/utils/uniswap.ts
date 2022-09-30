@@ -5,6 +5,8 @@ import { abi as QuoterABI } from '@uniswap/v3-periphery/artifacts/contracts/lens
 import { abi as SwapperABI } from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json';
 import { WETH } from '../../utils/swap';
 import { IWETH__factory } from '../../typechain';
+import { Signer } from 'ethers';
+import { Address } from 'hardhat-deploy/types';
 
 export const UNISWAP_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
 export const UNISWAP_QUOTER = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
@@ -37,4 +39,29 @@ export const buyToken = async (
   await wrapper.deposit({ value: price });
   await wrapper.connect(recipient).approve(UNISWAP_ROUTER, price);
   await router.connect(recipient).exactOutputSingle(params);
+};
+
+export const buyTokenFor = async (
+  token: string,
+  amount: bigint,
+  price: bigint,
+  signer: Signer,
+  recipient: string,
+  chainId = 1337
+) => {
+  const router = await ethers.getContractAt(SwapperABI, UNISWAP_ROUTER);
+  const params = {
+    tokenIn: WETH(chainId),
+    tokenOut: token,
+    fee: 3000,
+    deadline: Math.floor(Date.now() / 1000 + 1800),
+    recipient: recipient,
+    amountOut: amount,
+    amountInMaximum: price,
+    sqrtPriceLimitX96: 0,
+  };
+  const wrapper = (await ethers.getContractAt(IWETH__factory.abi, WETH(chainId) || '0x')).connect(signer);
+  await wrapper.deposit({ value: price });
+  await wrapper.connect(signer).approve(UNISWAP_ROUTER, price);
+  await router.connect(signer).exactOutputSingle(params);
 };

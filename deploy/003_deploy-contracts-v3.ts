@@ -1,5 +1,5 @@
 import { ethers, deployments } from 'hardhat';
-import { StaxeProductionsV3, StaxeProductionTokenV3 } from '../typechain';
+import { StaxeMembersV3, StaxeProductionsV3, StaxeProductionTokenV3, TransakOnePurchaseProxy } from '../typechain';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
@@ -103,6 +103,22 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   });
   log(`StaxeProductionsFactoryV3 deployed to ${factoryDeployment.address}`);
 
+  // ----- TransakOne Purchase Proxy
+  const purchaseProxyDeployment = await deploy('TransakOnePurchaseProxy', {
+    contract: 'TransakOnePurchaseProxy',
+    from: deployer,
+    log: logDeploy,
+    args: [forwarder],
+    proxy: {
+      proxyContract: 'OpenZeppelinTransparentProxy',
+      execute: {
+        methodName: 'initialize',
+        args: [productionsDeployment.address],
+      },
+    },
+  });
+  log(`TransakOnePurchaseProxy deployed to ${purchaseProxyDeployment.address}`);
+
   // -------------------------------------- ASSIGN DATA --------------------------------------
 
   // Token
@@ -124,6 +140,13 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await (await productions.addTrustedErc20Coin(daiAddress)).wait();
   }
 
+  // Members
+  const members = (await getContract('StaxeMembersV3')) as StaxeMembersV3;
+  const purchaseProxy = (await getContract('TransakOnePurchaseProxy')) as TransakOnePurchaseProxy;
+  if (!(await members.hasRole(await members.INVESTOR_ROLE(), purchaseProxy.address))) {
+    await (await members.grantRole(await members.INVESTOR_ROLE(), purchaseProxy.address)).wait();
+  }
+
   // -------------------------------------- LOG RESULTS --------------------------------------
 
   if (contract && deploymentSettings) {
@@ -133,6 +156,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract.factory = factoryDeployment.address;
     contract.owner = owner.address;
     contract.forwarder = forwarder;
+    contract.purchaseProxy = purchaseProxyDeployment.address;
     const newContent = JSON.stringify(deploymentSettings, null, 2);
     await fs.writeFile(__dirname + '/../deployments/deployments-v3.json', newContent);
   }

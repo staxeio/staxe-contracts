@@ -21,7 +21,7 @@ import "./interfaces/IProductionsV3.sol";
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IWETH.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact info@staxe.io
 contract StaxeProductionsV3 is
@@ -62,7 +62,13 @@ contract StaxeProductionsV3 is
 
   modifier validBuyer(address buyer) {
     require(buyer != address(0), "Buyer must be valid address");
-    require(buyer == _msgSender() || members.isInvestor(_msgSender()), "Invalid token buyer");
+    // 1. Anyone can buy for own address
+    // 2. Investors can buy for other addresses
+    // 3. Trusted relay can buy for other addresses
+    require(
+      buyer == _msgSender() || members.isInvestor(_msgSender()) || isTrustedForwarder(msg.sender),
+      "Invalid token buyer"
+    );
     _;
   }
 
@@ -224,7 +230,7 @@ contract StaxeProductionsV3 is
     uint256 amount,
     uint16 perk
   ) external override nonReentrant validProduction(id) validBuyer(buyer) {
-    buyWithTransfer(id, amount, buyer, buyer, perk);
+    buyWithTransfer(id, amount, _msgSender(), buyer, perk);
   }
 
   function buyTokensWithFiat(
@@ -233,7 +239,7 @@ contract StaxeProductionsV3 is
     uint256 amount,
     uint16 perk
   ) external override nonReentrant validProduction(id) trustedOnly {
-    buyWithTransfer(id, amount, _msgSender(), buyer, perk);
+    buyWithTransfer(id, amount, msg.sender, buyer, perk);
   }
 
   // ---- Proceeds and funds ----

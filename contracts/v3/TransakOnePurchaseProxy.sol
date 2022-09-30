@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/metatx/ERC2771ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
@@ -12,7 +11,7 @@ import "./interfaces/IProductionsV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
 
 /// @custom:security-contact info@staxe.io
-contract TransakOnePurchaseProxy is OwnableUpgradeable, ERC2771ContextUpgradeable {
+contract TransakOnePurchaseProxy is ERC2771ContextUpgradeable {
   struct Purchase {
     uint256 tokenId;
     uint256 numTokens;
@@ -30,7 +29,6 @@ contract TransakOnePurchaseProxy is OwnableUpgradeable, ERC2771ContextUpgradeabl
   }
 
   function initialize(IProductionsV3 _productions) public initializer {
-    __Ownable_init();
     productions = _productions;
   }
 
@@ -56,7 +54,7 @@ contract TransakOnePurchaseProxy is OwnableUpgradeable, ERC2771ContextUpgradeabl
   ) external {
     require(purchases[buyer].tokenId != 0, "No purchase exists");
     IERC20Upgradeable token = IERC20Upgradeable(tokenAddress);
-    token.safeTransferFrom(buyer, address(this), tokenAmount);
+    token.safeTransferFrom(_msgSender(), address(this), tokenAmount);
     token.safeApprove(address(productions), tokenAmount);
     productions.buyTokensWithTokens(
       purchases[buyer].tokenId,
@@ -64,15 +62,5 @@ contract TransakOnePurchaseProxy is OwnableUpgradeable, ERC2771ContextUpgradeabl
       purchases[buyer].numTokens,
       purchases[buyer].perkId
     );
-  }
-
-  // ---- Internal ----
-
-  function _msgSender() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (address sender) {
-    return ERC2771ContextUpgradeable._msgSender();
-  }
-
-  function _msgData() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (bytes calldata) {
-    return ERC2771ContextUpgradeable._msgData();
   }
 }
