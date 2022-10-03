@@ -11,32 +11,31 @@ import "./interfaces/IMembersV3.sol";
 // import "hardhat/console.sol";
 
 /// @custom:security-contact info@staxe.io
-contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpgradeable, IMembersV3 {
+contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, IMembersV3 {
   bytes32 public constant INVESTOR_ROLE = keccak256("INVESTOR_ROLE");
   bytes32 public constant ORGANIZER_ROLE = keccak256("ORGANIZER_ROLE");
   bytes32 public constant APPROVER_ROLE = keccak256("APPROVER_ROLE");
 
   mapping(address => address) organizerDelegate;
-  address private immutable trustedForwarder;
+  address private relayer;
 
   // ---- Events ----
 
   // ---- Functions ----
 
   /// @custom:oz-upgrades-unsafe-allow constructor
-  constructor(address _trustedForwarder) ERC2771ContextUpgradeable(_trustedForwarder) {
+  constructor() {
     _disableInitializers();
-    trustedForwarder = _trustedForwarder;
   }
 
-  function initialize(address treasury) public initializer {
+  function initialize(address treasury, address _relayer) public initializer {
     __AccessControlEnumerable_init();
-    _setupRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, _msgSender());
+    relayer = _relayer;
+    _setupRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, msg.sender);
     _setupRole(INVESTOR_ROLE, _msgSender());
     _setupRole(ORGANIZER_ROLE, _msgSender());
     _setupRole(APPROVER_ROLE, _msgSender());
-    _grantRole(INVESTOR_ROLE, trustedForwarder);
-    _grantRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, trustedForwarder);
+    _grantRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, relayer);
     _grantRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, treasury);
   }
 
@@ -67,17 +66,7 @@ contract StaxeMembersV3 is AccessControlEnumerableUpgradeable, ERC2771ContextUpg
   }
 
   function registerInvestor(address investor) external {
-    require(isTrustedForwarder(msg.sender), "Can only be called from trusted forwarder");
+    require(relayer == msg.sender, "Can only be called from trusted relayer");
     _grantRole(INVESTOR_ROLE, investor);
-  }
-
-  // ---- Internal ----
-
-  function _msgSender() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (address sender) {
-    return ERC2771ContextUpgradeable._msgSender();
-  }
-
-  function _msgData() internal view override(ContextUpgradeable, ERC2771ContextUpgradeable) returns (bytes calldata) {
-    return ERC2771ContextUpgradeable._msgData();
   }
 }

@@ -48,6 +48,7 @@ contract StaxeProductionsV3 is
   IMembersV3 public members;
   address public treasury;
   IWETH public nativeWrapper;
+  address private relayer;
 
   // ---------- Functions ----------
 
@@ -64,16 +65,12 @@ contract StaxeProductionsV3 is
     require(buyer != address(0), "Buyer must be valid address");
     // 1. Anyone can buy for own address
     // 2. Investors can buy for other addresses
-    // 3. Trusted relay can buy for other addresses
-    require(
-      buyer == _msgSender() || members.isInvestor(_msgSender()) || isTrustedForwarder(msg.sender),
-      "Invalid token buyer"
-    );
+    require(buyer == _msgSender() || members.isInvestor(_msgSender()), "Invalid token buyer");
     _;
   }
 
-  modifier trustedOnly() {
-    require(isTrustedForwarder(msg.sender), "Can only be called from trusted forwarder");
+  modifier relayerOnly() {
+    require(msg.sender == relayer, "Can only be called from trusted relayer");
     _;
   }
 
@@ -83,13 +80,15 @@ contract StaxeProductionsV3 is
     IProductionTokenV3 _productionToken,
     IMembersV3 _members,
     IWETH _nativeWrapper,
-    address _treasury
+    address _treasury,
+    address _relayer
   ) public initializer {
     require(_treasury != address(0), "Treasury must be valid address");
     productionToken = _productionToken;
     members = _members;
     nativeWrapper = _nativeWrapper;
     treasury = _treasury;
+    relayer = _relayer;
     tokenIds.increment();
     __Ownable_init();
     __ReentrancyGuard_init();
@@ -187,11 +186,11 @@ contract StaxeProductionsV3 is
   }
 
   function finishCrowdsale(uint256 id) external override nonReentrant validProduction(id) {
-    productionEscrows[id].escrow.finish(_msgSender(), isTrustedForwarder(msg.sender), treasury);
+    productionEscrows[id].escrow.finish(_msgSender(), msg.sender == relayer, treasury);
   }
 
   function close(uint256 id) external override nonReentrant validProduction(id) {
-    productionEscrows[id].escrow.close(_msgSender(), isTrustedForwarder(msg.sender), treasury);
+    productionEscrows[id].escrow.close(_msgSender(), msg.sender == relayer, treasury);
   }
 
   function pause(uint256 id) external override nonReentrant validProduction(id) {
@@ -238,7 +237,7 @@ contract StaxeProductionsV3 is
     address buyer,
     uint256 amount,
     uint16 perk
-  ) external override nonReentrant validProduction(id) trustedOnly {
+  ) external override nonReentrant validProduction(id) relayerOnly {
     buyWithTransfer(id, amount, msg.sender, buyer, perk);
   }
 
@@ -290,6 +289,10 @@ contract StaxeProductionsV3 is
 
   function removeTrustedErc20Coin(address invalidAddress) external onlyOwner {
     trustedErc20Coins[invalidAddress] = false;
+  }
+
+  function setRelayer(address _relayer) external onlyOwner {
+    relayer = _relayer;
   }
 
   // ---- Internal ----

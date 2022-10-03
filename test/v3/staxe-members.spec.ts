@@ -57,17 +57,12 @@ describe('StaxeMembersV3: roles', () => {
   });
 
   describe('Register Investor', () => {
-    it('adds investor role when trusted forwarder', async () => {
-      // when
+    it('adds investor role when trusted relayer', async () => {
+      // given
       const isInvestorBefore = await members.isInvestor(delegate.address);
-      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
-      const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
-        from: owner.address,
-        to: members.address,
-        data: members.interface.encodeFunctionData('registerInvestor', [delegate.address]),
-      });
-      const tx = await forwarder.execute(request, signature);
-      await tx.wait(1);
+
+      // when
+      await members.connect(owner).registerInvestor(delegate.address);
 
       const isInvestorAfter = await members.isInvestor(delegate.address);
 
@@ -76,10 +71,10 @@ describe('StaxeMembersV3: roles', () => {
       expect(isInvestorAfter).to.be.true;
     });
 
-    it('rejects adding investor role when not trusted forwarder', async () => {
+    it('rejects adding investor role when not trusted relayer', async () => {
       // when
       await expect(members.connect(investor1).registerInvestor(delegate.address)).to.be.revertedWith(
-        'Can only be called from trusted forwarder'
+        'Can only be called from trusted relayer'
       );
     });
   });

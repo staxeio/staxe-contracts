@@ -25,16 +25,12 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // -------------------------------------- CONTRACT DEPLOYMENT --------------------------------------
 
-  let forwarder = contract?.forwarder;
-  if (chainId === 1337) {
-    const minimalForwarder = await deploy('MinimalForwarder', {
-      contract: 'MinimalForwarder',
-      from: deployer,
-      log: logDeploy,
-      args: [],
-    });
-    forwarder = minimalForwarder.address;
-  }
+  const minimalForwarder = await deploy('MinimalForwarder', {
+    contract: 'MinimalForwarder',
+    from: deployer,
+    log: logDeploy,
+    args: [],
+  });
 
   // ----- Tokens
   const tokenDeployment = await deploy('StaxeProductionTokenV3', {
@@ -57,12 +53,11 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract: 'StaxeMembersV3',
     from: deployer,
     log: logDeploy,
-    args: [forwarder],
     proxy: {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
         methodName: 'initialize',
-        args: [treasuryByChainId],
+        args: [treasuryByChainId, contract.relayer],
       },
     },
   });
@@ -73,17 +68,17 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract: 'StaxeProductionsV3',
     from: deployer,
     log: logDeploy,
-    args: [forwarder],
+    args: [minimalForwarder.address],
     proxy: {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
         methodName: 'initialize',
-        args: [tokenDeployment.address, membersDeployment.address, wethAddress, treasuryByChainId],
+        args: [tokenDeployment.address, membersDeployment.address, wethAddress, treasuryByChainId, contract.relayer],
       },
     },
   });
   log(
-    `StaxeProductionsV3 deployed to ${productionsDeployment.address} with treasury=${treasuryByChainId}, forwarder=${forwarder}`
+    `StaxeProductionsV3 deployed to ${productionsDeployment.address} with treasury=${treasuryByChainId}, forwarder=${minimalForwarder.address}`
   );
 
   // ----- Escrow Factory with Calculation Engine
@@ -108,7 +103,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract: 'TransakOnePurchaseProxy',
     from: deployer,
     log: logDeploy,
-    args: [forwarder],
+    args: [minimalForwarder.address],
     proxy: {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
@@ -155,7 +150,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract.productions = productionsDeployment.address;
     contract.factory = factoryDeployment.address;
     contract.owner = owner.address;
-    contract.forwarder = forwarder;
+    contract.forwarder = minimalForwarder.address;
     contract.purchaseProxy = purchaseProxyDeployment.address;
     const newContent = JSON.stringify(deploymentSettings, null, 2);
     await fs.writeFile(__dirname + '/../deployments/deployments-v3.json', newContent);

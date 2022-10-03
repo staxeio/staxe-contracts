@@ -1,10 +1,5 @@
 import { expect } from 'chai';
-import {
-  MinimalForwarder,
-  StaxeProductionsFactoryV3,
-  StaxeProductionsV3,
-  StaxeProductionTokenV3,
-} from '../../typechain';
+import { StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {
   attachEscrow,
@@ -17,7 +12,6 @@ import {
 import { USDT } from '../../utils/swap';
 import { buyToken, buyTokenFor, getQuote } from '../utils/uniswap';
 import { getContract } from '../../utils/deployment';
-import { ethers, network } from 'hardhat';
 
 describe('StaxeProductionsV3: buy tokens', () => {
   // contracts
@@ -228,12 +222,6 @@ describe('StaxeProductionsV3: buy tokens', () => {
   describe('Buy tokens over relay (meta transactions)', () => {
     it('buys tokens after fiat payment over relay', async () => {
       // given
-      const forwarder = (await getContract('MinimalForwarder')) as MinimalForwarder;
-      await network.provider.request({
-        method: 'hardhat_impersonateAccount',
-        params: [forwarder.address],
-      });
-      const forwarderSigner = await ethers.provider.getSigner(forwarder.address);
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
@@ -242,15 +230,11 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const tokensToBuy = 5;
       const price = await productions.connect(investor1).getTokenPrice(id, tokensToBuy);
       const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
-      await network.provider.request({
-        method: 'hardhat_setBalance',
-        params: [forwarder.address, `0x${swapPrice.toString(16)}`],
-      });
-      await buyTokenFor(price[0], price[1].toBigInt(), swapPrice, owner, forwarder.address);
+      await buyTokenFor(price[0], price[1].toBigInt(), swapPrice, owner, owner.address);
 
       // when
-      await (await attachToken(price[0])).connect(forwarderSigner).approve(productions.address, price[1]);
-      await productions.connect(forwarderSigner).buyTokensWithFiat(id, investor1.address, tokensToBuy, 0);
+      await (await attachToken(price[0])).connect(owner).approve(productions.address, price[1]);
+      await productions.connect(owner).buyTokensWithFiat(id, investor1.address, tokensToBuy, 0);
 
       // then
       const balance = await token.balanceOf(investor1.address, id);
@@ -275,7 +259,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // when
       await expect(
         productions.connect(investor1).buyTokensWithFiat(id, investor1.address, tokensToBuy, 0)
-      ).to.be.revertedWith('Can only be called from trusted forwarder');
+      ).to.be.revertedWith('Can only be called from trusted relayer');
 
       // then
       const balance = await token.balanceOf(investor1.address, id);

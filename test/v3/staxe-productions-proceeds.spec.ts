@@ -1,11 +1,5 @@
 import { expect } from 'chai';
-import {
-  MinimalForwarder,
-  StaxeMembersV3,
-  StaxeProductionsFactoryV3,
-  StaxeProductionsV3,
-  StaxeProductionTokenV3,
-} from '../../typechain';
+import { StaxeMembersV3, StaxeProductionsFactoryV3, StaxeProductionsV3, StaxeProductionTokenV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import {
   attachEscrow,
@@ -18,8 +12,6 @@ import {
 } from '../utils/harness';
 import { USDT } from '../../utils/swap';
 import { timeStampPlusDays, timeTravel } from '../utils/ethers-utils';
-import { getContract } from '../../utils/deployment';
-import { ethers, network } from 'hardhat';
 
 describe('StaxeProductionsV3: send and retrieve proceeds', () => {
   // contracts
@@ -204,7 +196,7 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
       await productions.connect(delegate).finishCrowdsale(id);
     });
 
-    it('cannot finish crowdsale before end date, trusted forwarder can after end date', async () => {
+    it('cannot finish crowdsale before end date, trusted relayer can after end date', async () => {
       // given
       const totalTokens = 100;
       const endDate = await timeStampPlusDays(1);
@@ -213,29 +205,19 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
         productions.connect(approver),
         newProduction(totalTokens, 10n ** 6n, [], 0, USDT(1337), '', endDate)
       );
-      const forwarder = (await getContract('MinimalForwarder')) as MinimalForwarder;
-      await network.provider.request({
-        method: 'hardhat_impersonateAccount',
-        params: [forwarder.address],
-      });
-      await network.provider.request({
-        method: 'hardhat_setBalance',
-        params: [forwarder.address, `0x${200000000000000000n.toString(16)}`],
-      });
-      const forwarderSigner = await ethers.provider.getSigner(forwarder.address);
 
       // when
       await expect(productions.connect(organizer).finishCrowdsale(id)).to.be.revertedWith(
         'Cannot be finished before finish date or only by creator'
       );
-      await expect(productions.connect(forwarderSigner).finishCrowdsale(id)).to.be.revertedWith(
+      await expect(productions.connect(owner).finishCrowdsale(id)).to.be.revertedWith(
         'Cannot be finished before finish date or only by creator'
       );
       await timeTravel(2);
       await expect(productions.connect(organizer2).finishCrowdsale(id)).to.be.revertedWith(
         'Cannot be finished before finish date or only by creator'
       );
-      await productions.connect(forwarderSigner).finishCrowdsale(id);
+      await productions.connect(owner).finishCrowdsale(id);
     });
 
     it('cannot finish crowdsale directly on escrow', async () => {
@@ -275,7 +257,7 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
       await productions.connect(delegate).close(id);
     });
 
-    it('cannot close production before end date, trusted forwarder can after end date', async () => {
+    it('cannot close production before end date, trusted relayer can after end date', async () => {
       // given
       const totalTokens = 100;
       const endDate = await timeStampPlusDays(1);
@@ -285,29 +267,19 @@ describe('StaxeProductionsV3: send and retrieve proceeds', () => {
         newProduction(totalTokens, 10n ** 6n, [], 0, USDT(1337), '', 0, endDate)
       );
       await productions.connect(organizer).finishCrowdsale(id);
-      const forwarder = (await getContract('MinimalForwarder')) as MinimalForwarder;
-      await network.provider.request({
-        method: 'hardhat_impersonateAccount',
-        params: [forwarder.address],
-      });
-      await network.provider.request({
-        method: 'hardhat_setBalance',
-        params: [forwarder.address, `0x${200000000000000000n.toString(16)}`],
-      });
-      const forwarderSigner = await ethers.provider.getSigner(forwarder.address);
 
       // when
       await expect(productions.connect(organizer).close(id)).to.be.revertedWith(
         'Cannot be closed before close date or only by creator'
       );
-      await expect(productions.connect(forwarderSigner).close(id)).to.be.revertedWith(
+      await expect(productions.connect(owner).close(id)).to.be.revertedWith(
         'Cannot be closed before close date or only by creator'
       );
       await timeTravel(2);
       await expect(productions.connect(organizer2).close(id)).to.be.revertedWith(
         'Cannot be closed before close date or only by creator'
       );
-      await productions.connect(forwarderSigner).close(id);
+      await productions.connect(owner).close(id);
     });
 
     it('cannot close production directly on escrow', async () => {
