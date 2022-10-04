@@ -65,7 +65,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await forwarder.execute(request, signature);
 
       // when
-      await (await attachToken(price[0])).connect(transakOne).approve(transakProxy.address, price[1].toBigInt());
+      await (await attachToken(price[0])).connect(transakOne).transfer(transakProxy.address, price[1].toBigInt());
       await transakProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt(), price[0]);
 
       // then

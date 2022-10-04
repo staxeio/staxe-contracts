@@ -54,7 +54,6 @@ contract TransakOnePurchaseProxy is ERC2771ContextUpgradeable {
   ) external {
     require(purchases[buyer].tokenId != 0, "No purchase exists");
     IERC20Upgradeable token = IERC20Upgradeable(tokenAddress);
-    token.safeTransferFrom(_msgSender(), address(this), tokenAmount);
     token.safeApprove(address(productions), tokenAmount);
     productions.buyTokensWithTokens(
       purchases[buyer].tokenId,
