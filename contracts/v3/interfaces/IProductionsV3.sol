@@ -27,6 +27,8 @@ interface IProductionsV3 {
     bool paused;
   }
 
+  function isTrustedErc20Token(address candidate) external view returns (bool);
+
   function mintProduction(
     IProductionEscrowV3 escrow,
     address creator,

@@ -4,11 +4,11 @@ import {
   StaxeProductionsFactoryV3,
   StaxeProductionsV3,
   StaxeProductionTokenV3,
-  TransakOnePurchaseProxy,
+  StaxePurchaseProxyV3,
 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { attachToken, createAndApproveProduction, harness, newProduction } from '../utils/harness';
-import { USDT } from '../../utils/swap';
+import { DAI, USDT } from '../../utils/swap';
 import { buyToken, getQuote } from '../utils/uniswap';
 import { getContract } from '../../utils/deployment';
 import { network } from 'hardhat';
@@ -19,7 +19,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
   let token: StaxeProductionTokenV3;
   let productions: StaxeProductionsV3;
   let factory: StaxeProductionsFactoryV3;
-  let transakProxy: TransakOnePurchaseProxy;
+  let transakProxy: StaxePurchaseProxyV3;
 
   // actors
   let owner: SignerWithAddress;
@@ -29,6 +29,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
   let investor2: SignerWithAddress;
 
   const usdt = USDT(1337) as string;
+  const dai = DAI(1337) as string;
 
   beforeEach(async () => {
     ({ token, productions, factory, transakProxy, owner, approver, organizer, investor1, investor2 } = await harness());
@@ -42,7 +43,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 6n)
+        newProduction(100, 10n ** 18n, [], 0, dai)
       );
       const transakOne = investor1;
       const tokensToBuy = 7;
@@ -65,7 +66,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await forwarder.execute(request, signature);
 
       // when
-      await (await attachToken(price[0])).connect(transakOne).transfer(transakProxy.address, price[1].toBigInt());
+      await (await attachToken(price[0])).connect(transakOne).approve(transakProxy.address, price[1].toBigInt());
       await transakProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt(), price[0]);
 
       // then

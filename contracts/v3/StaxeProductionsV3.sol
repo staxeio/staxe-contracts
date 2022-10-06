@@ -283,6 +283,10 @@ contract StaxeProductionsV3 is
     trustedEscrowFactories[invalidAddress] = false;
   }
 
+  function isTrustedErc20Token(address candidate) external view override returns (bool) {
+    return trustedErc20Coins[candidate];
+  }
+
   function addTrustedErc20Coin(address trustedErc20Coin) external onlyOwner {
     trustedErc20Coins[trustedErc20Coin] = true;
   }

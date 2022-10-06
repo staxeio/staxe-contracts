@@ -9,7 +9,7 @@ import {
   StaxeProductionsFactoryV3,
   StaxeProductionsV3,
   StaxeProductionTokenV3,
-  TransakOnePurchaseProxy,
+  StaxePurchaseProxyV3,
 } from '../../typechain';
 import { USDT } from '../../utils/swap';
 import { buyToken, getQuote } from './uniswap';
@@ -24,7 +24,7 @@ export const harness = async (fixture = ['v3']) => {
   const token = (await getContract('StaxeProductionTokenV3')) as StaxeProductionTokenV3;
   const productions = (await getContract('StaxeProductionsV3')) as StaxeProductionsV3;
   const factory = (await getContract('StaxeProductionsFactoryV3')) as StaxeProductionsFactoryV3;
-  const transakProxy = (await getContract('TransakOnePurchaseProxy')) as TransakOnePurchaseProxy;
+  const transakProxy = (await getContract('StaxePurchaseProxyV3')) as StaxePurchaseProxyV3;
 
   await members.grantRole(await members.INVESTOR_ROLE(), investor1.address);
   await members.grantRole(await members.INVESTOR_ROLE(), investor2.address);

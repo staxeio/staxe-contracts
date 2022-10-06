@@ -1,5 +1,5 @@
 import { ethers, deployments } from 'hardhat';
-import { StaxeMembersV3, StaxeProductionsV3, StaxeProductionTokenV3, TransakOnePurchaseProxy } from '../typechain';
+import { StaxeMembersV3, StaxeProductionsV3, StaxeProductionTokenV3, StaxePurchaseProxyV3 } from '../typechain';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
@@ -98,9 +98,10 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   });
   log(`StaxeProductionsFactoryV3 deployed to ${factoryDeployment.address}`);
 
-  // ----- TransakOne Purchase Proxy
-  const purchaseProxyDeployment = await deploy('TransakOnePurchaseProxy', {
-    contract: 'TransakOnePurchaseProxy',
+  // ----- Staxe Purchase Proxy
+  const acceptedToken = chainId === 137 ? usdtAddress : daiAddress;
+  const purchaseProxyDeployment = await deploy('StaxePurchaseProxyV3', {
+    contract: 'StaxePurchaseProxyV3',
     from: deployer,
     log: logDeploy,
     args: [minimalForwarder.address],
@@ -108,11 +109,11 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
         methodName: 'initialize',
-        args: [productionsDeployment.address],
+        args: [productionsDeployment.address, acceptedToken],
       },
     },
   });
-  log(`TransakOnePurchaseProxy deployed to ${purchaseProxyDeployment.address}`);
+  log(`StaxePurchaseProxyV3 deployed to ${purchaseProxyDeployment.address}`);
 
   // -------------------------------------- ASSIGN DATA --------------------------------------
 
@@ -137,7 +138,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Members
   const members = (await getContract('StaxeMembersV3')) as StaxeMembersV3;
-  const purchaseProxy = (await getContract('TransakOnePurchaseProxy')) as TransakOnePurchaseProxy;
+  const purchaseProxy = (await getContract('StaxePurchaseProxyV3')) as StaxePurchaseProxyV3;
   if (!(await members.hasRole(await members.INVESTOR_ROLE(), purchaseProxy.address))) {
     await (await members.grantRole(await members.INVESTOR_ROLE(), purchaseProxy.address)).wait();
   }
