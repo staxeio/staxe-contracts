@@ -19,7 +19,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
   let token: StaxeProductionTokenV3;
   let productions: StaxeProductionsV3;
   let factory: StaxeProductionsFactoryV3;
-  let transakProxy: StaxePurchaseProxyV3;
+  let purchaseProxy: StaxePurchaseProxyV3;
 
   // actors
   let owner: SignerWithAddress;
@@ -32,12 +32,22 @@ describe('StaxeProductionsV3: buy tokens', () => {
   const dai = DAI(1337) as string;
 
   beforeEach(async () => {
-    ({ token, productions, factory, transakProxy, owner, approver, organizer, investor1, investor2 } = await harness());
+    ({
+      token,
+      productions,
+      factory,
+      transakProxy: purchaseProxy,
+      owner,
+      approver,
+      organizer,
+      investor1,
+      investor2,
+    } = await harness());
   });
 
   // --------------------------- BUY WITH TOKENS ---------------------------
 
-  describe('Buy tokens with gasles purchase and Transak proxy', () => {
+  describe('Buy tokens with gasles purchase and proxy', () => {
     it('buys tokens with placing a purchase', async () => {
       // given
       const id = await createAndApproveProduction(
@@ -54,8 +64,8 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
         from: investor2.address,
-        to: transakProxy.address,
-        data: transakProxy.interface.encodeFunctionData('placePurchase', [id, tokensToBuy, 0]),
+        to: purchaseProxy.address,
+        data: purchaseProxy.interface.encodeFunctionData('placePurchase', [id, tokensToBuy, 0]),
       });
       await network.provider.request({
         method: 'hardhat_setBalance',
@@ -66,14 +76,14 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await forwarder.execute(request, signature);
 
       // when
-      await (await attachToken(price[0])).connect(transakOne).approve(transakProxy.address, price[1].toBigInt());
-      await transakProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt(), price[0]);
+      await (await attachToken(price[0])).connect(transakOne).approve(purchaseProxy.address, price[1].toBigInt());
+      await purchaseProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt(), price[0]);
 
       // then
       const balance = await token.balanceOf(investor2.address, id);
       expect(balance).to.be.equal(tokensToBuy);
       const escrow = (await productions.getProduction(id)).escrow;
-      const balanceEscrow = await (await attachToken(usdt)).balanceOf(escrow);
+      const balanceEscrow = await (await attachToken(dai)).balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(price[1]);
     });
   });

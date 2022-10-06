@@ -21,7 +21,7 @@ import "./interfaces/IProductionsV3.sol";
 import "./interfaces/IMembersV3.sol";
 import "./interfaces/IWETH.sol";
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 /// @custom:security-contact info@staxe.io
 contract StaxeProductionsV3 is
@@ -84,14 +84,14 @@ contract StaxeProductionsV3 is
     address _relayer
   ) public initializer {
     require(_treasury != address(0), "Treasury must be valid address");
+    __Ownable_init();
+    __ReentrancyGuard_init();
     productionToken = _productionToken;
     members = _members;
     nativeWrapper = _nativeWrapper;
     treasury = _treasury;
     relayer = _relayer;
     tokenIds.increment();
-    __Ownable_init();
-    __ReentrancyGuard_init();
   }
 
   // ---- Data Access ----

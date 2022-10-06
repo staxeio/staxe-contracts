@@ -10,9 +10,12 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "./interfaces/IProductionsV3.sol";
 import "./interfaces/IProductionEscrowV3.sol";
+import "./interfaces/IPurchaseProxyV3.sol";
+
+// import "hardhat/console.sol";
 
 /// @custom:security-contact info@staxe.io
-contract StaxePurchaseProxyV3 is ERC20Upgradeable, ERC2771ContextUpgradeable {
+contract StaxePurchaseProxyV3 is IPurchaseProxyV3, ERC20Upgradeable, ERC2771ContextUpgradeable {
   struct Purchase {
     uint256 tokenId;
     uint256 numTokens;
@@ -46,20 +49,33 @@ contract StaxePurchaseProxyV3 is ERC20Upgradeable, ERC2771ContextUpgradeable {
     uint256 tokenId,
     uint256 numTokens,
     uint16 perkId
-  ) external {
+  ) external override {
     require(
-      productions.getProduction(tokenId).data.state != IProductionEscrowV3.ProductionState.EMPTY,
-      "Production does not exist"
+      productions.getProduction(tokenId).data.state == IProductionEscrowV3.ProductionState.OPEN,
+      "Proudction not open for token sales"
     );
     require(numTokens != 0, "Invalid token number to buy");
     purchases[_msgSender()] = Purchase({tokenId: tokenId, numTokens: numTokens, perkId: perkId});
+  }
+
+  function purchase(
+    uint256 tokenId,
+    uint256 numTokens,
+    uint16 perkId
+  ) external override {
+    require(
+      productions.getProduction(tokenId).data.state == IProductionEscrowV3.ProductionState.OPEN,
+      "Proudction not open for token sales"
+    );
+    require(numTokens != 0, "Invalid token number to buy");
+    _purchase(_msgSender(), tokenId, numTokens, perkId);
   }
 
   function depositTo(
     address buyer,
     uint256 tokenAmount,
     address tokenAddress
-  ) external {
+  ) external override {
     require(tokenAddress == address(wrappedToken), "Invalid token sent");
     IERC20Upgradeable token = IERC20Upgradeable(tokenAddress);
     token.safeTransferFrom(_msgSender(), address(this), tokenAmount);
@@ -70,6 +86,12 @@ contract StaxePurchaseProxyV3 is ERC20Upgradeable, ERC2771ContextUpgradeable {
         purchases[buyer].tokenId = 0;
       }
     }
+  }
+
+  function withdraw(uint256 amount) external override {
+    require(balanceOf(_msgSender()) >= amount, "Balance not high enough");
+    _transfer(_msgSender(), address(this), amount);
+    wrappedToken.safeTransfer(_msgSender(), amount);
   }
 
   // ---- Internal ----
