@@ -5,7 +5,7 @@ import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
 
 import deploymentSettings from '../deployments/deployments-v3.json';
-import { WETH, USDT, DAI } from '../utils/swap';
+import { WETH, USDT, DAI, USDC } from '../utils/swap';
 import { getContract } from '../utils/deployment';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -21,6 +21,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const wethAddress = WETH(chainId);
   const usdtAddress = USDT(chainId);
+  const usdcAddress = USDC(chainId);
   const daiAddress = DAI(chainId);
 
   // -------------------------------------- CONTRACT DEPLOYMENT --------------------------------------
@@ -99,7 +100,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   log(`StaxeProductionsFactoryV3 deployed to ${factoryDeployment.address}`);
 
   // ----- Staxe Purchase Proxy
-  const acceptedToken = chainId === 137 ? usdtAddress : daiAddress;
+  const acceptedToken = usdcAddress;
   const purchaseProxyDeployment = await deploy('StaxePurchaseProxyV3', {
     contract: 'StaxePurchaseProxyV3',
     from: deployer,
@@ -131,6 +132,9 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
   if (usdtAddress && !(await productions.trustedErc20Coins(usdtAddress))) {
     await (await productions.addTrustedErc20Coin(usdtAddress)).wait();
+  }
+  if (usdcAddress && !(await productions.trustedErc20Coins(usdcAddress))) {
+    await (await productions.addTrustedErc20Coin(usdcAddress)).wait();
   }
   if (daiAddress && !(await productions.trustedErc20Coins(daiAddress))) {
     await (await productions.addTrustedErc20Coin(daiAddress)).wait();

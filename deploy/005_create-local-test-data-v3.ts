@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { harness, newProduction } from '../test/utils/harness';
 import { buyToken, getQuote } from '../test/utils/uniswap';
-import { DAI } from '../utils/swap';
+import { USDC } from '../utils/swap';
 import { BigNumber } from 'ethers';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -16,15 +16,15 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const production = newProduction(
     100,
-    // 1n * 10n ** 6n, // USDT
-    1n * 10n ** 18n, // DAI
+    1n * 10n ** 6n, // USDT/USDC
+    //1n * 10n ** 18n, // DAI
     [
       { minTokensRequired: 1, total: 10 },
       { minTokensRequired: 5, total: 5 },
       { minTokensRequired: 10, total: 1 },
     ],
     0,
-    DAI(chainId)
+    USDC(chainId)
   );
 
   const tx = await factory.connect(organizer).createProduction(production);

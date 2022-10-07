@@ -8,7 +8,7 @@ import {
 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { attachToken, createAndApproveProduction, harness, newProduction } from '../utils/harness';
-import { DAI, USDT } from '../../utils/swap';
+import { USDC } from '../../utils/swap';
 import { buyToken, getQuote } from '../utils/uniswap';
 import { getContract } from '../../utils/deployment';
 import { signMetaTxRequest } from '../../utils/signer';
@@ -27,7 +27,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
   let investor1: SignerWithAddress;
   let investor2: SignerWithAddress;
 
-  const dai = DAI(1337) as string;
+  const usdc = USDC(1337) as string;
 
   beforeEach(async () => {
     ({
@@ -51,7 +51,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 18n, [], 0, dai)
+        newProduction(100, 10n ** 6n, [], 0, usdc)
       );
       const transakOne = investor1;
       const tokensToBuy = 7;
@@ -77,7 +77,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const balance = await token.balanceOf(investor2.address, id);
       expect(balance).to.be.equal(tokensToBuy);
       const escrow = (await productions.getProduction(id)).escrow;
-      const balanceEscrow = await (await attachToken(dai)).balanceOf(escrow);
+      const balanceEscrow = await (await attachToken(usdc)).balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(price[1]);
     });
 
@@ -86,7 +86,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 18n, [], 0, dai)
+        newProduction(100, 10n ** 6n, [], 0, usdc)
       );
       const transakOne = investor1;
       const tokensToBuy = 7;
@@ -112,7 +112,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const balance = await token.balanceOf(investor2.address, id);
       expect(balance).to.be.equal(tokensToBuy);
       const escrow = (await productions.getProduction(id)).escrow;
-      const balanceEscrow = await (await attachToken(dai)).balanceOf(escrow);
+      const balanceEscrow = await (await attachToken(usdc)).balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(price[1]);
     });
 
@@ -121,7 +121,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 18n, [], 0, dai)
+        newProduction(100, 10n ** 6n, [], 0, usdc)
       );
       const transakOne = investor1;
       const tokensToBuy = 10;
@@ -147,7 +147,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const balance = await token.balanceOf(investor2.address, id);
       expect(balance).to.be.equal(0);
       const escrow = (await productions.getProduction(id)).escrow;
-      const balanceEscrow = await (await attachToken(dai)).balanceOf(escrow);
+      const balanceEscrow = await (await attachToken(usdc)).balanceOf(escrow);
       expect(balanceEscrow).to.be.equal(0);
     });
 
@@ -156,7 +156,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 18n, [], 0, dai)
+        newProduction(100, 10n ** 6n, [], 0, usdc)
       );
       const transakOne = investor1;
       const tokensToBuy = 2;
@@ -167,8 +167,8 @@ describe('StaxeProductionsV3: buy tokens', () => {
       // when
       await (await attachToken(price[0]))
         .connect(transakOne)
-        .approve(purchaseProxy.address, price[1].toBigInt() - 1000000n);
-      await purchaseProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt() - 1000000n, price[0]);
+        .approve(purchaseProxy.address, price[1].toBigInt() - 1000n);
+      await purchaseProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt() - 1000n, price[0]);
 
       const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
@@ -192,7 +192,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 18n, [], 0, dai)
+        newProduction(100, 10n ** 6n, [], 0, usdc)
       );
       const transakOne = investor1;
       const tokensToBuy = 4;
@@ -227,7 +227,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const id = await createAndApproveProduction(
         factory.connect(organizer),
         productions.connect(approver),
-        newProduction(100, 10n ** 18n, [], 0, dai)
+        newProduction(100, 10n ** 6n, [], 0, usdc)
       );
       const transakOne = investor1;
       const tokensToBuy = 8;

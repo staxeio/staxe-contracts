@@ -74,6 +74,21 @@ export const USDT = (chain: number) => {
   }
 };
 
+export const USDC = (chain: number) => {
+  switch (chain) {
+    case 1:
+      return '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'; // main
+    case 5:
+      return '0x07865c6E87B9F70255377e024ace6630C1Eaa37F'; // goerli
+    case 137:
+      return '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'; // matic
+    case 80001:
+      return '0x0fa8781a83e46826621b3bc094ea2a0212e71b23'; // mumbai
+    case 1337:
+      return '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'; // hardhat -> matic
+  }
+};
+
 export const jEUR = (chain: number) => {
   switch (chain) {
     case 1:
