@@ -52,7 +52,10 @@ contract StaxeProductionsV3 is
 
   // ---------- Functions ----------
 
-  constructor(address trustedForwarder) ERC2771ContextUpgradeable(trustedForwarder) {}
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor(address trustedForwarder) ERC2771ContextUpgradeable(trustedForwarder) {
+    _disableInitializers();
+  }
 
   // ---- Modifiers ----
 
@@ -83,9 +86,11 @@ contract StaxeProductionsV3 is
     address _treasury,
     address _relayer
   ) public initializer {
-    require(_treasury != address(0), "Treasury must be valid address");
     __Ownable_init();
     __ReentrancyGuard_init();
+
+    require(_treasury != address(0), "Treasury must be valid address");
+
     productionToken = _productionToken;
     members = _members;
     nativeWrapper = _nativeWrapper;
