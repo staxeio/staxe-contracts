@@ -14,6 +14,19 @@
       "forwarder": "0xCc9D1d8ba0322124f2c83666B4B62165F1ff1F67"
     },
     {
+      "chainId": 80001,
+      "name": "mumbai",
+      "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "relayer": "0xe10538e42fa4e4734045adcfd3a7f18235fb7353",
+      "token": "0x633bE362150ddc30EA2AF7B072Ed188dCC76D5b4",
+      "members": "0x5A69a91FBd2166133bFF906e4a106d0774756D57",
+      "productions": "0x49381Ea7B58035314041EDF4CAB6ABAcD77b480A",
+      "factory": "0x6b563CeA992a8dA4f3e6eF460F96e0A8E1736857",
+      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "purchaseProxy": "0xf2803F6bc1b55c75AB8B67554031966FD9b54A48",
+      "forwarder": "0x20ACE310642Ed8F97E62082f3f21B2B7a066bf74"
+    },
+    {
       "chainId": 1337,
       "name": "hardhat",
       "treasury": "0x47d99A63D7135E30b626209FEeabB91cF464A905",
