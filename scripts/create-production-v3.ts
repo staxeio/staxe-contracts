@@ -2,24 +2,25 @@ import { ethers, getChainId } from 'hardhat';
 import { newProduction } from '../test/utils/harness';
 import { StaxeProductionsFactoryV3, StaxeProductionsV3 } from '../typechain';
 import { getContract } from '../utils/deployment';
-import { USDC } from '../utils/swap';
+import { DAI /*, USDC*/ } from '../utils/swap';
 
 async function main() {
   const [deployer] = await ethers.getSigners();
   const chainId = await getChainId();
   console.log(`Deploying contracts account: ${deployer.address}, chainId: ${chainId}`);
 
-  // -> 100 tokens for 0.01 USDC per token, 3 perks
+  // -> 100 tokens for 0.01 USDC/DAI per token, 3 perks
   const production = newProduction(
     100,
-    1n * 10n ** (6n - 3n),
+    // 1n * 10n ** (6n - 3n), // USDC
+    1n * 10n ** (18n - 3n), // DAI
     [
       { minTokensRequired: 1, total: 10 },
       { minTokensRequired: 5, total: 5 },
       { minTokensRequired: 10, total: 1 },
     ],
     0,
-    USDC(+chainId)
+    DAI(+chainId)
   );
 
   const productions = (await getContract('StaxeProductionsV3')) as StaxeProductionsV3;

@@ -5,13 +5,13 @@
       "name": "goerli",
       "treasury": "0x3751D63E364824463E98B33F626566389fB703C4",
       "relayer": "0xf23f3f8408507b4db8dfda9748ca5c8b5e944649",
-      "token": "0xf2803F6bc1b55c75AB8B67554031966FD9b54A48",
-      "members": "0xB4af7C2fc5B5616E85a05Dc4E2cEc9C6B79B3769",
-      "productions": "0xEca8bD3D05d41458a951eb1B737ae821D7072Cc6",
-      "factory": "0xd80A2C31fb17af6702b44662F46b0c4B0c063133",
+      "token": "0xb7171CA99C410a18246B62a55e44e23E1dEC4B69",
+      "members": "0x4a64E861DDd3a6914BE8De0f1E92FB6A41FD227c",
+      "productions": "0x55d5230490f2cbf0af6d8b35309Dda5F53F99Fc4",
+      "factory": "0xF21aaF6928803149993a5feADB5CdE5Dd0350C19",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f",
-      "purchaseProxy": "0xFAeD55c1A54525bcf6a91e59D86577088E4db77D",
-      "forwarder": "0xCc9D1d8ba0322124f2c83666B4B62165F1ff1F67"
+      "purchaseProxy": "0x11034Afd88b2db10bC8e932dFA54A43021bcf5de",
+      "forwarder": "0x8F48cE0F879230f8935824431aCf9bA5374c0394"
     },
     {
       "chainId": 80001,

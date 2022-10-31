@@ -1,9 +1,7 @@
 import { expect } from 'chai';
-import { MinimalForwarder, StaxeMembersV3 } from '../../typechain';
+import { StaxeMembersV3 } from '../../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { harness } from '../utils/harness';
-import { getContract } from '../../utils/deployment';
-import { signMetaTxRequest } from '../../utils/signer';
 
 describe('StaxeMembersV3: roles', () => {
   // contracts
