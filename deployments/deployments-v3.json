@@ -18,13 +18,13 @@
       "name": "mumbai",
       "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
       "relayer": "0xe10538e42fa4e4734045adcfd3a7f18235fb7353",
-      "token": "0x633bE362150ddc30EA2AF7B072Ed188dCC76D5b4",
-      "members": "0x5A69a91FBd2166133bFF906e4a106d0774756D57",
-      "productions": "0x49381Ea7B58035314041EDF4CAB6ABAcD77b480A",
-      "factory": "0x6b563CeA992a8dA4f3e6eF460F96e0A8E1736857",
+      "token": "0xd5331537F7547E11c1793f85b84b6Cfd7aDe4cd1",
+      "members": "0x10659Ad96C3fd76707c81cF959e273EACd1e0B2f",
+      "productions": "0x8Fd010c29913640bC5BA1d9Af8176f260DDdACA5",
+      "factory": "0x70604d2d4999a1fFd7BB3D3Cbb700D2015a8c567",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f",
-      "purchaseProxy": "0xf2803F6bc1b55c75AB8B67554031966FD9b54A48",
-      "forwarder": "0x20ACE310642Ed8F97E62082f3f21B2B7a066bf74"
+      "purchaseProxy": "0xB43c887741314F3EDC4682C86e3800DB4faB7C21",
+      "forwarder": "0xFAeD55c1A54525bcf6a91e59D86577088E4db77D"
     },
     {
       "chainId": 1337,

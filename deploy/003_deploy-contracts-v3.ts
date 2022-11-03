@@ -100,7 +100,6 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   log(`StaxeProductionsFactoryV3 deployed to ${factoryDeployment.address}`);
 
   // ----- Staxe Purchase Proxy
-  const acceptedToken = usdcAddress;
   const purchaseProxyDeployment = await deploy('StaxePurchaseProxyV3', {
     contract: 'StaxePurchaseProxyV3',
     from: deployer,
@@ -110,7 +109,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       proxyContract: 'OpenZeppelinTransparentProxy',
       execute: {
         methodName: 'initialize',
-        args: [productionsDeployment.address, acceptedToken],
+        args: [productionsDeployment.address, usdtAddress],
       },
     },
   });

@@ -68,7 +68,7 @@ export const USDT = (chain: number) => {
     case 137:
       return '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'; // matic
     case 80001:
-      return '0xf7f730ffaec85455e3ba44f488c2bd2a741953b3'; // mumbai
+      return '0xa02f6adc7926efebbd59fd43a84f4e0c0c91e832'; // mumbai
     case 1337:
       return '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'; // hardhat -> matic
   }
