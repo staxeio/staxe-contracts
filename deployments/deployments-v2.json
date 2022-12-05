@@ -34,10 +34,10 @@
       "chainId": 80001,
       "name": "mumbai",
       "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
-      "token": "0xbCaBEfbaD13F46EFE6d91E37A3c6adA7f16B63e9",
-      "members": "0x706F160839846015163EdeAF1150Bf54A6A7dF0a",
-      "productions": "0x31cE7d7a06e381422173179eE6f638054d62cfa5",
-      "factory": "0xafe8fe108db24967c69493fead9b5ef3874a1186",
+      "token": "0x050E101A41Ca1040536adac24B131E4535b8624c",
+      "members": "0xb87C97018a0A45Fee145e85D7E79c77E5242023c",
+      "productions": "0x6CE6AE6Ff8d4c576d8BA3dc6135f1Ee3827336DE",
+      "factory": "0xAD0c303F4c02C129Bd222d158Fe68abE8f2A8bAf",
       "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
     },
     {
