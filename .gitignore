@@ -47,3 +47,13 @@ coverage.json
 
 # Do not commit secrets file
 secrets.json
+
+# OpenZeppelin
+.openzeppelin/*-1337.json
+
+deployments/localhost
+
+# Goerli deployment data
+deployments/goerli/*
+!deployments/goerli/.chainId
+!deployments/goerli/*.json

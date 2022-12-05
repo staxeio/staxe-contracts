@@ -80,13 +80,16 @@ docker pull trailofbits/eth-security-toolbox
 Enter the container with this repository mapped into a shared directory:
 
 ```shell
-docker run -it -v [current dir]:/share trailofbits/eth-security-toolbox
+docker run -it -v $PWD:/share trailofbits/eth-security-toolbox
 ```
 
 and then run the reports with
 
 ```shell
-cd /shared && slither .
+solc-select install 0.8.9
+solc-select use 0.8.9
+cd /share
+slither . --solc-remaps @openzeppelin=/share/node_modules/@openzeppelin --exclude naming-convention,external-function,low-level-calls
 ```
 
 The output will be stored in `artifacts/slither.json` for further usage.

@@ -1,0 +1,54 @@
+{
+  "contracts": [
+    {
+      "chainId": 4,
+      "name": "rinkeby",
+      "treasury": "0xF4A81e08BD48a89ca3D7cf7a77E9B80c8468a6bC",
+      "token": "0xce873FE81526F1447a4De391e4efc5A52E4FB21c",
+      "members": "0xad5510C2504f11F03Be80f0273a52dEA24Bb0D18",
+      "productions": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
+      "factory": "0x0BeD64aeEd0EB808D0Fb547aE66c1A9866b4127b",
+      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
+    },
+    {
+      "chainId": 42,
+      "name": "kovan",
+      "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "token": "0xF968Eb4BAe372d6C6506e9B3e616bAC77733F2dE",
+      "members": "0xc6F2A1918330948b0B326B7EC23F0184Eceb8bbC",
+      "productions": "0x6FcA762Def740662Efb3F18c09BBB39CBC0652F4",
+      "factory": "0x33d8222c404fA0039515889D2b22c98d84472C0c",
+      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
+    },
+    {
+      "chainId": 137,
+      "name": "polygon mainnet",
+      "treasury": "0x0fE0891A55a270F6fb9E010599A47605D388A1e9",
+      "token": "0xdcD904788E92e144aB51fddf03779Caf0b923313",
+      "members": "0xf6b0F14aCa4E7049793337d66c07099345ACe288",
+      "productions": "0x64579DaC33cd1051C3223CAb746881168dffdDbE",
+      "factory": "0x31DF3725e1aEEd81EbA2f2BD0d4736EeF306e4c3",
+      "owner": "0x2C2CfC54d472eCF97f5B43616A6e6ADAB1798563"
+    },
+    {
+      "chainId": 80001,
+      "name": "mumbai",
+      "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "token": "0x050E101A41Ca1040536adac24B131E4535b8624c",
+      "members": "0xb87C97018a0A45Fee145e85D7E79c77E5242023c",
+      "productions": "0x6CE6AE6Ff8d4c576d8BA3dc6135f1Ee3827336DE",
+      "factory": "0xAD0c303F4c02C129Bd222d158Fe68abE8f2A8bAf",
+      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f"
+    },
+    {
+      "chainId": 1337,
+      "name": "hardhat",
+      "treasury": "0xf66342abe568291a35Fd80Fe8B33162341e66adD",
+      "token": "0xe684a83D5F4f40505918E6d5e4F98aF70157A299",
+      "members": "0x9Ce51d8a88Ae5845269561907d4b2224861aA9de",
+      "productions": "0xA6e372d3f2225BA680CB4AC53E5c72A6342c332e",
+      "factory": "0x697AD5edAccBd3f9eE45C2Eb73122c9165DcD641",
+      "owner": "0x47d99A63D7135E30b626209FEeabB91cF464A905"
+    }
+  ]
+}

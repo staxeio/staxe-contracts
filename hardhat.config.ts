@@ -6,6 +6,7 @@ import '@typechain/hardhat';
 import 'solidity-coverage';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
+import '@openzeppelin/hardhat-upgrades';
 import * as fs from 'fs';
 import { task } from 'hardhat/config';
 import { HardhatUserConfig } from 'hardhat/types';
@@ -17,7 +18,8 @@ if (!fs.existsSync(secrets)) {
   secrets = './secrets.template.json';
 }
 const currentDir = __dirname;
-const { etherscanApiKey, infuraProjectId, polygonscanApiKey, networkConfig } = require(secrets);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { etherscanApiKey, infuraProjectId, polygonscanApiKey, networkConfig, coinmarketcap } = require(secrets);
 
 // Tasks
 task('accounts', 'Prints the list of accounts', async (args, hre) => {
@@ -32,11 +34,11 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.13',
+        version: '0.8.9',
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 500,
           },
         },
       },
@@ -51,6 +53,10 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic: 'throw ripple canoe glue typical soccer repeat enhance arch dolphin warm enough',
       },
+      forking: {
+        blockNumber: 32000000,
+        url: `https://polygon-mainnet.g.alchemy.com/v2/${networkConfig?.hardhat?.alchemyApiKey}`,
+      },
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${infuraProjectId}`,
@@ -59,6 +65,10 @@ const config: HardhatUserConfig = {
     kovan: {
       url: `https://kovan.infura.io/v3/${infuraProjectId}`,
       accounts: [`0x${networkConfig?.kovan?.privateKey}`],
+    },
+    goerli: {
+      url: `https://eth-goerli.g.alchemy.com/v2/${networkConfig?.goerli?.alchemyApiKey}`,
+      accounts: [`0x${networkConfig?.goerli?.privateKey}`],
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${infuraProjectId}`,
@@ -73,6 +83,12 @@ const config: HardhatUserConfig = {
       chainId: 137,
       url: `https://polygon-mainnet.g.alchemy.com/v2/${networkConfig?.matic?.alchemyApiKey}`,
       accounts: [`0x${networkConfig?.matic?.privateKey}`],
+    },
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0, // here this will by default take the first account as deployer
+      1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
     },
   },
   etherscan: {
@@ -93,7 +109,9 @@ const config: HardhatUserConfig = {
   },
   gasReporter: {
     currency: 'USD',
-    gasPrice: 21,
+    coinmarketcap: coinmarketcap,
+    gasPrice: 27,
+    token: 'MATIC',
   },
 };
 
