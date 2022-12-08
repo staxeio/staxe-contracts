@@ -139,13 +139,6 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await (await productions.addTrustedErc20Coin(daiAddress)).wait();
   }
 
-  // Members
-  const members = (await getContract('StaxeMembersV3')) as StaxeMembersV3;
-  const purchaseProxy = (await getContract('StaxePurchaseProxyV3')) as StaxePurchaseProxyV3;
-  if (!(await members.hasRole(await members.INVESTOR_ROLE(), purchaseProxy.address))) {
-    await (await members.grantRole(await members.INVESTOR_ROLE(), purchaseProxy.address)).wait();
-  }
-
   // -------------------------------------- LOG RESULTS --------------------------------------
 
   if (contract && deploymentSettings) {
