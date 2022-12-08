@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {
-  MinimalForwarder,
+  StaxeForwarder,
   StaxeProductionsFactoryV3,
   StaxeProductionsV3,
   StaxeProductionTokenV3,
@@ -59,7 +59,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
       await buyToken(price[0], 2n * price[1].toBigInt(), 3n * swapPrice, transakOne);
 
-      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
+      const forwarder = ((await getContract('StaxeForwarder')) as StaxeForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
         from: investor2.address,
         to: purchaseProxy.address,
@@ -98,7 +98,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await (await attachToken(price[0])).connect(transakOne).approve(purchaseProxy.address, price[1].toBigInt());
       await purchaseProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt(), price[0]);
 
-      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
+      const forwarder = ((await getContract('StaxeForwarder')) as StaxeForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
         from: investor2.address,
         to: purchaseProxy.address,
@@ -129,7 +129,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       const swapPrice = await getQuote(price[0], price[1].toBigInt(), 1337);
       await buyToken(price[0], 2n * price[1].toBigInt(), 3n * swapPrice, transakOne);
 
-      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
+      const forwarder = ((await getContract('StaxeForwarder')) as StaxeForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
         from: investor2.address,
         to: purchaseProxy.address,
@@ -170,7 +170,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
         .approve(purchaseProxy.address, price[1].toBigInt() - 1000n);
       await purchaseProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt() - 1000n, price[0]);
 
-      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
+      const forwarder = ((await getContract('StaxeForwarder')) as StaxeForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
         from: investor2.address,
         to: purchaseProxy.address,
@@ -205,7 +205,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await purchaseProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt(), price[0]);
       const balanceWrapper = await purchaseProxy.balanceOf(investor2.address);
 
-      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
+      const forwarder = ((await getContract('StaxeForwarder')) as StaxeForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
         from: investor2.address,
         to: purchaseProxy.address,
@@ -240,7 +240,7 @@ describe('StaxeProductionsV3: buy tokens', () => {
       await purchaseProxy.connect(transakOne).depositTo(investor2.address, price[1].toBigInt(), price[0]);
       const balanceWrapper = await purchaseProxy.balanceOf(investor2.address);
 
-      const forwarder = ((await getContract('MinimalForwarder')) as MinimalForwarder).connect(owner);
+      const forwarder = ((await getContract('StaxeForwarder')) as StaxeForwarder).connect(owner);
       const { request, signature } = await signMetaTxRequest(owner.provider, forwarder, {
         from: investor2.address,
         to: purchaseProxy.address,

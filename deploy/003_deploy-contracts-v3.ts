@@ -26,8 +26,8 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // -------------------------------------- CONTRACT DEPLOYMENT --------------------------------------
 
-  const minimalForwarder = await deploy('MinimalForwarder', {
-    contract: 'MinimalForwarder',
+  const minimalForwarder = await deploy('StaxeForwarder', {
+    contract: 'StaxeForwarder',
     from: deployer,
     log: logDeploy,
     args: [],

@@ -1,4 +1,4 @@
-import { MinimalForwarder } from '../typechain';
+import { StaxeForwarder } from '../typechain';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ethSigUtil = require('eth-sig-util');
 
@@ -25,8 +25,8 @@ function getMetaTxTypeData(chainId: any, verifyingContract: any) {
       ForwardRequest,
     },
     domain: {
-      name: 'MinimalForwarder',
-      version: '0.0.1',
+      name: 'Staxe',
+      version: '1.0.0',
       chainId,
       verifyingContract,
     },
@@ -48,18 +48,18 @@ async function signTypedData(signer: any, from: any, data: any) {
   return await signer.send(method, [from, argData]);
 }
 
-async function buildRequest(forwarder: MinimalForwarder, input: any) {
+async function buildRequest(forwarder: StaxeForwarder, input: any) {
   const nonce = await forwarder.getNonce(input.from).then((nonce) => nonce.toString());
   return { value: 0, gas: 1e6, nonce, ...input };
 }
 
-async function buildTypedData(forwarder: MinimalForwarder, request: any) {
+async function buildTypedData(forwarder: StaxeForwarder, request: any) {
   const chainId = await forwarder.provider.getNetwork().then((n) => n.chainId);
   const typeData = getMetaTxTypeData(chainId, forwarder.address);
   return { ...typeData, message: request };
 }
 
-export async function signMetaTxRequest(signer: any, forwarder: MinimalForwarder, input: any) {
+export async function signMetaTxRequest(signer: any, forwarder: StaxeForwarder, input: any) {
   const request = await buildRequest(forwarder, input);
   const toSign = await buildTypedData(forwarder, request);
   const signature = await signTypedData(signer, input.from, toSign);
