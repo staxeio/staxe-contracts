@@ -6,7 +6,6 @@ import { abi as SwapperABI } from '@uniswap/v3-periphery/artifacts/contracts/int
 import { WETH } from '../../utils/swap';
 import { IWETH__factory } from '../../typechain';
 import { Signer } from 'ethers';
-import { Address } from 'hardhat-deploy/types';
 
 export const UNISWAP_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
 export const UNISWAP_QUOTER = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
