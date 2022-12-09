@@ -1,5 +1,5 @@
 import { ethers, deployments } from 'hardhat';
-import { StaxeMembersV3, StaxeProductionsV3, StaxeProductionTokenV3, StaxePurchaseProxyV3 } from '../typechain';
+import { StaxeProductionsV3, StaxeProductionTokenV3 } from '../typechain';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
@@ -99,22 +99,6 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   });
   log(`StaxeProductionsFactoryV3 deployed to ${factoryDeployment.address}`);
 
-  // ----- Staxe Purchase Proxy
-  const purchaseProxyDeployment = await deploy('StaxePurchaseProxyV3', {
-    contract: 'StaxePurchaseProxyV3',
-    from: deployer,
-    log: logDeploy,
-    args: [minimalForwarder.address],
-    proxy: {
-      proxyContract: 'OpenZeppelinTransparentProxy',
-      execute: {
-        methodName: 'initialize',
-        args: [productionsDeployment.address, usdcAddress],
-      },
-    },
-  });
-  log(`StaxePurchaseProxyV3 deployed to ${purchaseProxyDeployment.address}`);
-
   // -------------------------------------- ASSIGN DATA --------------------------------------
 
   // Token
@@ -122,21 +106,26 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const isMinter = await token.hasRole(await token.MINTER_ROLE(), productionsDeployment.address);
   if (!isMinter) {
     await (await token.grantRole(await token.MINTER_ROLE(), productionsDeployment.address)).wait();
+    log(`Granted minter role to ${productionsDeployment.address} in ${token.address}`);
   }
 
   // Production
   const productions = (await getContract('StaxeProductionsV3')) as StaxeProductionsV3;
   if (!(await productions.trustedEscrowFactories(factoryDeployment.address))) {
     await (await productions.addTrustedEscrowFactory(factoryDeployment.address)).wait();
+    log(`Added trusted escrow factory: ${factoryDeployment.address} to ${productions.address}`);
   }
   if (usdtAddress && !(await productions.trustedErc20Coins(usdtAddress))) {
     await (await productions.addTrustedErc20Coin(usdtAddress)).wait();
+    log(`Added USDT as trusted ERC20 token: ${usdtAddress} to ${productions.address}`);
   }
   if (usdcAddress && !(await productions.trustedErc20Coins(usdcAddress))) {
     await (await productions.addTrustedErc20Coin(usdcAddress)).wait();
+    log(`Added USDC as trusted ERC20 token: ${usdcAddress} to ${productions.address}`);
   }
   if (daiAddress && !(await productions.trustedErc20Coins(daiAddress))) {
     await (await productions.addTrustedErc20Coin(daiAddress)).wait();
+    log(`Added DAI as trusted ERC20 token: ${daiAddress}`);
   }
 
   // -------------------------------------- LOG RESULTS --------------------------------------
@@ -148,9 +137,9 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contract.factory = factoryDeployment.address;
     contract.owner = owner.address;
     contract.forwarder = minimalForwarder.address;
-    contract.purchaseProxy = purchaseProxyDeployment.address;
     const newContent = JSON.stringify(deploymentSettings, null, 2);
     await fs.writeFile(__dirname + '/../deployments/deployments-v3.json', newContent);
+    log(`Updated deployment addresses: ${JSON.stringify(contract, null, 2)}`);
   }
 };
 

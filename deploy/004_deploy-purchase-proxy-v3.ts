@@ -44,8 +44,11 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // -------------------------------------- ASSIGN DATA --------------------------------------
 
   const members = (await getContract('StaxeMembersV3')) as StaxeMembersV3;
-  if (!(await members.hasRole(await members.INVESTOR_ROLE(), purchaseProxyDeployment.address))) {
+  const isInvestor = await members.hasRole(await members.INVESTOR_ROLE(), purchaseProxyDeployment.address);
+  log(`Purchase proxy has investor role: ${isInvestor}`);
+  if (!isInvestor) {
     await (await members.grantRole(await members.INVESTOR_ROLE(), purchaseProxyDeployment.address)).wait();
+    log(`Granted investor role to ${purchaseProxyDeployment.address}`);
   }
 
   // -------------------------------------- LOG RESULTS --------------------------------------

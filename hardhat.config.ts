@@ -58,14 +58,6 @@ const config: HardhatUserConfig = {
         url: `https://polygon-mainnet.g.alchemy.com/v2/${networkConfig?.hardhat?.alchemyApiKey}`,
       },
     },
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${infuraProjectId}`,
-      accounts: [`0x${networkConfig?.rinkeby?.privateKey}`],
-    },
-    kovan: {
-      url: `https://kovan.infura.io/v3/${infuraProjectId}`,
-      accounts: [`0x${networkConfig?.kovan?.privateKey}`],
-    },
     goerli: {
       url: `https://eth-goerli.g.alchemy.com/v2/${networkConfig?.goerli?.alchemyApiKey}`,
       accounts: [`0x${networkConfig?.goerli?.privateKey}`],
@@ -94,10 +86,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       mainnet: etherscanApiKey,
-      ropsten: etherscanApiKey,
-      rinkeby: etherscanApiKey,
       goerli: etherscanApiKey,
-      kovan: etherscanApiKey,
       polygon: polygonscanApiKey,
       polygonMumbai: polygonscanApiKey,
     },
