@@ -126,13 +126,10 @@ contract StaxeProductionsV3 is
       });
   }
 
-  function getTokenPrice(uint256 id, uint256 amount)
-    external
-    view
-    override
-    validProduction(id)
-    returns (IERC20Upgradeable, uint256)
-  {
+  function getTokenPrice(
+    uint256 id,
+    uint256 amount
+  ) external view override validProduction(id) returns (IERC20Upgradeable, uint256) {
     return productionEscrows[id].escrow.getTokenPrice(amount, _msgSender());
   }
 
@@ -144,7 +141,10 @@ contract StaxeProductionsV3 is
     return productionEscrows[id].escrow.getTokenPrice(amount, buyer);
   }
 
-  function getTokenOwnerData(uint256 id, address tokenOwner)
+  function getTokenOwnerData(
+    uint256 id,
+    address tokenOwner
+  )
     external
     view
     override
@@ -246,6 +246,10 @@ contract StaxeProductionsV3 is
     buyWithTransfer(id, amount, msg.sender, buyer, perk);
   }
 
+  function grantPerk(uint256 id, address grantee, uint16 perk) external override nonReentrant validProduction(id) {
+    productionEscrows[id].escrow.grantPerk(_msgSender(), grantee, perk);
+  }
+
   // ---- Proceeds and funds ----
 
   function depositProceedsInTokens(uint256 id, uint256 amount) external override nonReentrant validProduction(id) {
@@ -343,10 +347,10 @@ contract StaxeProductionsV3 is
     }
   }
 
-  function swapToTargetTokenAmountIn(IERC20Upgradeable targetToken, address targetAddress)
-    private
-    returns (uint256 amountIn)
-  {
+  function swapToTargetTokenAmountIn(
+    IERC20Upgradeable targetToken,
+    address targetAddress
+  ) private returns (uint256 amountIn) {
     ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
       tokenIn: address(nativeWrapper),
       tokenOut: address(targetToken),
@@ -362,13 +366,7 @@ contract StaxeProductionsV3 is
     amountIn = router.exactInputSingle(params);
   }
 
-  function buyWithTransfer(
-    uint256 id,
-    uint256 amount,
-    address tokenHolder,
-    address buyer,
-    uint16 perk
-  ) private {
+  function buyWithTransfer(uint256 id, uint256 amount, address tokenHolder, address buyer, uint16 perk) private {
     require(amount > 0, "Must pass amount > 0");
     IProductionEscrowV3 escrow = productionEscrows[id].escrow;
     require(amount <= escrow.getTokensAvailable(), "Cannot buy more than available");

@@ -77,12 +77,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     external
     view
     override
-    returns (
-      ProductionData memory,
-      Perk[] memory,
-      uint256,
-      uint256
-    )
+    returns (ProductionData memory, Perk[] memory, uint256, uint256)
   {
     return (productionData, perks, fundsRaised, proceedsEarned);
   }
@@ -95,7 +90,9 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return productionData.priceCalculationEngine.calculateTokenPrice(this, productionData, tokenPrice, amount, buyer);
   }
 
-  function getTokenOwnerData(address tokenOwner)
+  function getTokenOwnerData(
+    address tokenOwner
+  )
     external
     view
     override
@@ -222,7 +219,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
         productionData.maxTokensUnknownBuyer == 0,
       "Needs investor role to buy amount of tokens"
     );
-    claimPerk(buyer, amount, perkId);
+    claimPerk(buyer, amount, perkId, false);
     fundsRaised += price;
     emit TokenBought(buyer, amount, price, perkId);
     productionData.soldCounter += amount;
@@ -230,24 +227,22 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     purchasesByBuyer[buyer].push(Purchase(amount, price));
   }
 
-  function depositProceeds(address caller, uint256 amount)
-    external
-    override
-    hasState(ProductionState.FINISHED)
-    creatorOnly(caller)
-    onlyOwner
-  {
+  function grantPerk(address caller, address buyer, uint16 perkId) external override creatorOnly(caller) onlyOwner {
+    require(tokenContract.balanceOf(buyer, productionData.id) > 0, "Grantee must own token");
+    claimPerk(buyer, 0, perkId, true);
+  }
+
+  function depositProceeds(
+    address caller,
+    uint256 amount
+  ) external override hasState(ProductionState.FINISHED) creatorOnly(caller) onlyOwner {
     emit ProceedsDeposited(amount, caller);
     proceedsEarned += amount;
   }
 
-  function transferProceeds(address holder)
-    external
-    override
-    hasState(ProductionState.FINISHED)
-    onlyOwner
-    returns (uint256 payout)
-  {
+  function transferProceeds(
+    address holder
+  ) external override hasState(ProductionState.FINISHED) onlyOwner returns (uint256 payout) {
     require(members.isInvestor(holder), "Only investors can claim proceeds");
     uint256 tokens = tokenContract.balanceOf(holder, productionData.id);
     payout = ((tokens * proceedsEarned) / productionData.soldCounter) - payoutPerTokenTracking[holder];
@@ -260,7 +255,10 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     }
   }
 
-  function transferFunding(address caller, address platformTreasury)
+  function transferFunding(
+    address caller,
+    address platformTreasury
+  )
     external
     override
     hasState(ProductionState.OPEN)
@@ -277,7 +275,7 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   // ---------------------------------------------------------------------------------------------
 
   function onTokenTransfer(
-    IERC1155Upgradeable, /* tokenContract */
+    IERC1155Upgradeable /* tokenContract */,
     uint256 tokenId,
     address currentOwner,
     address newOwner,
@@ -294,8 +292,8 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   }
 
   function onERC1155Received(
-    address, /*operator*/
-    address, /*from*/
+    address /*operator*/,
+    address /*from*/,
     uint256 tokenId,
     uint256 amount,
     bytes calldata /*data*/
@@ -318,10 +316,10 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   }
 
   function onERC1155BatchReceived(
-    address, /*operator*/
-    address, /*from*/
-    uint256[] calldata, /*tokenIds*/
-    uint256[] calldata, /*values*/
+    address /*operator*/,
+    address /*from*/,
+    uint256[] calldata /*tokenIds*/,
+    uint256[] calldata /*values*/,
     bytes calldata /*data*/
   ) external virtual override returns (bytes4) {
     return 0x00; // unsupported
@@ -338,10 +336,10 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
   // private
   // ---------------------------------------------------------------------------------------------
 
-  function swipeToCreator(address caller, address platformTreasury)
-    private
-    returns (uint256 balanceLeft, uint256 platformShare)
-  {
+  function swipeToCreator(
+    address caller,
+    address platformTreasury
+  ) private returns (uint256 balanceLeft, uint256 platformShare) {
     IERC20Upgradeable currency = IERC20Upgradeable(productionData.currency);
     uint256 balance = currency.balanceOf(address(this));
     platformShare = (balance * productionData.platformSharePercentage) / 100;
@@ -355,18 +353,14 @@ contract StaxeProductionEscrowV3 is Ownable, IProductionEscrowV3, IERC1155Receiv
     return productionData.creator == caller || members.isOrganizerDelegate(caller, productionData.creator);
   }
 
-  function claimPerk(
-    address buyer,
-    uint256 tokensBought,
-    uint16 perkId
-  ) internal {
+  function claimPerk(address buyer, uint256 tokensBought, uint16 perkId, bool granted) private {
     if (perkId == 0) {
       return;
     }
     require(perkId <= perks.length, "Invalid perkId");
     Perk storage perk = perks[perkId - 1];
     require(perk.total > perk.claimed, "Perk not available");
-    require(perk.minTokensRequired <= tokensBought, "Not enough tokens to claim");
+    require(perk.minTokensRequired <= tokensBought || granted, "Not enough tokens to claim");
     perk.claimed += 1;
     perksByOwner[buyer].push(perkId);
     EnumerableSet.add(perkSetByOwner[buyer], perkId);

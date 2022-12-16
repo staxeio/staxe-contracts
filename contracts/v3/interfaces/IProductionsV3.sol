@@ -45,7 +45,10 @@ interface IProductionsV3 {
     address buyer
   ) external view returns (IERC20Upgradeable, uint256);
 
-  function getTokenOwnerData(uint256 id, address tokenOwner)
+  function getTokenOwnerData(
+    uint256 id,
+    address tokenOwner
+  )
     external
     view
     returns (
@@ -72,26 +75,13 @@ interface IProductionsV3 {
 
   function cancel(uint256 id, uint256 newCloseDate) external;
 
-  function buyTokensWithCurrency(
-    uint256 id,
-    address buyer,
-    uint256 amount,
-    uint16 perk
-  ) external payable;
+  function buyTokensWithCurrency(uint256 id, address buyer, uint256 amount, uint16 perk) external payable;
 
-  function buyTokensWithTokens(
-    uint256 id,
-    address buyer,
-    uint256 amount,
-    uint16 perk
-  ) external;
+  function buyTokensWithTokens(uint256 id, address buyer, uint256 amount, uint16 perk) external;
 
-  function buyTokensWithFiat(
-    uint256 id,
-    address buyer,
-    uint256 amount,
-    uint16 perk
-  ) external;
+  function buyTokensWithFiat(uint256 id, address buyer, uint256 amount, uint16 perk) external;
+
+  function grantPerk(uint id, address grantee, uint16 perk) external;
 
   function depositProceedsInTokens(uint256 id, uint256 amount) external;
 

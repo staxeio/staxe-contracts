@@ -63,14 +63,11 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
   function getProductionDataWithPerks()
     external
     view
-    returns (
-      ProductionData memory,
-      Perk[] memory,
-      uint256 fundsRaised,
-      uint256 proceedsEarned
-    );
+    returns (ProductionData memory, Perk[] memory, uint256 fundsRaised, uint256 proceedsEarned);
 
-  function getTokenOwnerData(address tokenOwner)
+  function getTokenOwnerData(
+    address tokenOwner
+  )
     external
     view
     returns (
@@ -89,17 +86,9 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
 
   function decline(address decliner) external;
 
-  function finish(
-    address caller,
-    bool isTrustedForwarder,
-    address platformTreasury
-  ) external;
+  function finish(address caller, bool isTrustedForwarder, address platformTreasury) external;
 
-  function close(
-    address caller,
-    bool isTrustedForwarder,
-    address platformTreasury
-  ) external;
+  function close(address caller, bool isTrustedForwarder, address platformTreasury) external;
 
   function pause(address caller) external;
 
@@ -109,18 +98,16 @@ interface IProductionEscrowV3 is IProductionTokenTrackerV3 {
 
   function cancel(address caller, uint256 newCloseDate) external;
 
-  function buyTokens(
-    address buyer,
-    uint256 amount,
-    uint256 price,
-    uint16 perk
-  ) external;
+  function buyTokens(address buyer, uint256 amount, uint256 price, uint16 perk) external;
+
+  function grantPerk(address caller, address buyer, uint16 perkId) external;
 
   function depositProceeds(address caller, uint256 amount) external;
 
   function transferProceeds(address tokenHolder) external returns (uint256 amount);
 
-  function transferFunding(address caller, address platformTreasury)
-    external
-    returns (uint256 amount, uint256 platformShare);
+  function transferFunding(
+    address caller,
+    address platformTreasury
+  ) external returns (uint256 amount, uint256 platformShare);
 }
