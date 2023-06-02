@@ -13,6 +13,7 @@
     "contracts:coverage": "npx hardhat coverage",
     "deploy:goerli": "npx hardhat deploy --network goerli --tags test",
     "deploy:mumbai": "npx hardhat deploy --network mumbai --tags test",
+    "deploy:alfajores": "npx hardhat deploy --network alfajores --tags test",
     "deploy:matic": "npx hardhat deploy --network matic --tags prod"
   },
   "private": true,

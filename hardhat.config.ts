@@ -76,6 +76,11 @@ const config: HardhatUserConfig = {
       url: `https://polygon-mainnet.g.alchemy.com/v2/${networkConfig?.matic?.alchemyApiKey}`,
       accounts: [`0x${networkConfig?.matic?.privateKey}`],
     },
+    alfajores: {
+      chainId: 44787,
+      url: 'https://alfajores-forno.celo-testnet.org',
+      accounts: [`0x${networkConfig?.alfajores?.privateKey}`],
+    },
   },
   namedAccounts: {
     deployer: {

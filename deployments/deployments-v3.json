@@ -51,6 +51,19 @@
       "owner": "0x47d99A63D7135E30b626209FEeabB91cF464A905",
       "purchaseProxy": "0x21fecD7cE8A528f864e4cA0d0CEA51b2EBD15f79",
       "forwarder": "0xe684a83D5F4f40505918E6d5e4F98aF70157A299"
+    },
+    {
+      "chainId": 44787,
+      "name": "alfajores",
+      "treasury": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "relayer": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "token": "0xCa02B423069C33582FE5DED89C46529F15ce9854",
+      "members": "0x94aA9b1DDc5CA292b12d7C31C8c4Fb94d11927b1",
+      "productions": "0x59D6Ee798e8acF47611Fd29CFa73aa41BaaC3B51",
+      "factory": "0x06a3A873Bd1474fb41b54db9DC6ca63237D8A784",
+      "owner": "0xef5c870723Af027274a09610546ffC55D6eB117f",
+      "purchaseProxy": "0x21fecD7cE8A528f864e4cA0d0CEA51b2EBD15f79",
+      "forwarder": "0x06Da36862E87D70878B01d91FdFAAcc04407C59B"
     }
   ]
 }

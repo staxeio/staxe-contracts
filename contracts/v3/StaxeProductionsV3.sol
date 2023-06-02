@@ -40,7 +40,7 @@ contract StaxeProductionsV3 is
   mapping(address => bool) public trustedEscrowFactories;
   mapping(address => bool) public trustedErc20Coins;
 
-  ISwapRouter public constant router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+  ISwapRouter public constant router = ISwapRouter(0x5615CDAb10dc425a742d643d949a7F474C01abc4);
 
   mapping(uint256 => Escrow) public productionEscrows;
   mapping(address => uint256[]) public productionIdsByOwner;
@@ -331,7 +331,7 @@ contract StaxeProductionsV3 is
       amountInMaximum: msg.value,
       sqrtPriceLimitX96: 0
     });
-    nativeWrapper.deposit{value: msg.value}();
+    //nativeWrapper.deposit{value: msg.value}();
     TransferHelper.safeApprove(address(nativeWrapper), address(router), msg.value);
     amountIn = router.exactOutputSingle(params);
     if (amountIn < msg.value) {

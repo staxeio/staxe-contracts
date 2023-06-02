@@ -5,7 +5,7 @@ import { DeployFunction } from 'hardhat-deploy/types';
 import { promises as fs } from 'fs';
 
 import deploymentSettings from '../deployments/deployments-v3.json';
-import { WETH, USDT, DAI, USDC } from '../utils/swap';
+import { WETH, USDT, DAI, USDC, cEUR } from '../utils/swap';
 import { getContract } from '../utils/deployment';
 
 const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -23,6 +23,7 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const usdtAddress = USDT(chainId);
   const usdcAddress = USDC(chainId);
   const daiAddress = DAI(chainId);
+  const ceurAddress = cEUR(chainId);
 
   // -------------------------------------- CONTRACT DEPLOYMENT --------------------------------------
 
@@ -125,6 +126,10 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
   if (daiAddress && !(await productions.trustedErc20Coins(daiAddress))) {
     await (await productions.addTrustedErc20Coin(daiAddress)).wait();
+    log(`Added DAI as trusted ERC20 token: ${daiAddress}`);
+  }
+  if (ceurAddress && !(await productions.trustedErc20Coins(ceurAddress))) {
+    await (await productions.addTrustedErc20Coin(ceurAddress)).wait();
     log(`Added DAI as trusted ERC20 token: ${daiAddress}`);
   }
 

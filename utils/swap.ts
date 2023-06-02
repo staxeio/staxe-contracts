@@ -23,6 +23,8 @@ export const WETH = (chain: number) => {
       return '0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889'; // mumbai
     case 1337:
       return '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'; // hardhat -> matic
+    case 44787:
+      return '0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9'; // alfajores
   }
 };
 
@@ -108,5 +110,12 @@ export const jCHF = (chain: number) => {
       return '0xbD1463F02f61676d53fd183C2B19282BFF93D099'; // matic
     case 1337:
       return '0xbD1463F02f61676d53fd183C2B19282BFF93D099'; // hardhat -> matic
+  }
+};
+
+export const cEUR = (chain: number) => {
+  switch (chain) {
+    case 44787:
+      return '0x10c892a6ec43a53e45d0b916b4b7d383b1b78c0f';
   }
 };
