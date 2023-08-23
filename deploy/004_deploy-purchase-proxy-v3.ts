@@ -61,4 +61,4 @@ const main: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 module.exports = main;
-module.exports.tags = ['develop', 'test', 'v3'];
+module.exports.tags = ['develop', 'test', 'v3', 'prod'];
